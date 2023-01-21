@@ -38,7 +38,4 @@ simulationGARCH(GARCHcoeff(2,2,0.8),20)
 simulationGARCH(list(alpha = c(0.2, 0.05), beta = c(0.09,0.02)),20)
 
 
-#hola
-
-
 
