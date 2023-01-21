@@ -1,6 +1,5 @@
 #install.packages("fGarch")
 library(fGarch)
-
 rm(list = ls())
 
 seed <- 123
@@ -28,14 +27,14 @@ GARCHcoeff(2,2,0.8)
 #omega is by default
 simulationGARCH <- function(coeff,n){
   spec = garchSpec(model = coeff)
-  return(garchSim(spec, n))
+  data <- garchSim(spec, n)
+  plot(data, type = "l", col = "blue", main = "Generated GARCH")
+  return(data)
 }
 
 #example with the generated coefficients
-simulationGARCH(GARCHcoeff(2,2,0.8),20)
+simulationGARCH(GARCHcoeff(2,2,0.8),1000)
 
 #example with own coefficents
 simulationGARCH(list(alpha = c(0.2, 0.05), beta = c(0.09,0.02)),20)
-
-
 
