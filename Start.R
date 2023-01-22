@@ -45,6 +45,14 @@ sample_edf <- function(x, n){ #Sampling from data with replacement
   return(out)
 }
 
+make_boot_sample <- function(x, n, B){ #Makes bootstrap sample
+  out <- matrix(0, nrow = B, ncol = n)
+  for (b in 1:B){
+    out[b,] <- sample_edf(x, n)
+  }
+  return(out)
+}
+
 # test to see if the edf function matches the base R one
 x <- rnorm(1000)
 plot(ecdf(x))
@@ -52,4 +60,4 @@ lines(seq(-4, 4, length=1000),
       edf(x, seq(-4, 4, length=1000)), 
       col='red')
 
-
+y <- c(1, 2, 3, 4, 5)
