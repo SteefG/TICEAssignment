@@ -1,5 +1,8 @@
 #install.packages("fGarch")
+#install.packages('bootUR')
+
 library(fGarch)
+library(bootUR)
 rm(list = ls())
 
 seed <- 123
@@ -33,8 +36,20 @@ simulationGARCH <- function(coeff,n){
 }
 
 #example with the generated coefficients
-simulationGARCH(GARCHcoeff(2,2,0.8),1000)
+sim_series <- simulationGARCH(GARCHcoeff(2,2,0.8),1000)
+#no trend, looks stationary
+stationarity <- function(series){
+  adftest <- adf(series, deterministics = "intercept")
+  if(adftest$p.value < 0.05){
+    print("The series is stationary. Hurray!")
+  }
+  else{
+    ("The series is not stationary.")
+  }
+}
+
+stationarity(sim_series)
 
 #example with own coefficents
-simulationGARCH(list(alpha = c(0.2, 0.05), beta = c(0.09,0.02)),20)
+#simulationGARCH(list(alpha = c(0.2, 0.05), beta = c(0.09,0.02)),20)
 
