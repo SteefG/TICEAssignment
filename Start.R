@@ -25,7 +25,7 @@ monte_carlo_normal <- function(N, sample_size, alpha, mu, sigma){
 # As N increases then coverage should converge to 1-alpha by LLN
 # Plot the coverage as N increases and as sample size increases
 
-
+#Empirical Distribution Function implementation
 edf <- function(x, increment) {
   out<-numeric(length(increment))
   length <- length(increment) #To stop it from recalculating this in the loop
@@ -36,7 +36,8 @@ edf <- function(x, increment) {
   out
 }
 
-sample_edf <- function(x, n){ #Sampling from data with replacement
+#Sampling from data with replacement
+sample_edf <- function(x, n){ 
   out <- rep(0, n)
   values <- floor(runif(n, min = 1, max = length(x)))
   for (i in 1:n){
@@ -45,7 +46,8 @@ sample_edf <- function(x, n){ #Sampling from data with replacement
   return(out)
 }
 
-make_boot_sample <- function(x, n, B){ #Makes bootstrap sample
+#Makes bootstrap sample
+make_boot_sample <- function(x, n, B){ 
   out <- matrix(0, nrow = B, ncol = n)
   for (b in 1:B){
     out[b,] <- sample_edf(x, n)
@@ -53,11 +55,9 @@ make_boot_sample <- function(x, n, B){ #Makes bootstrap sample
   return(out)
 }
 
-# test to see if the edf function matches the base R one
+# test to see if the EDF function matches the base R one
 x <- rnorm(1000)
 plot(ecdf(x))
 lines(seq(-4, 4, length=1000), 
       edf(x, seq(-4, 4, length=1000)), 
       col='red')
-
-y <- c(1, 2, 3, 4, 5)
