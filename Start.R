@@ -26,13 +26,23 @@ monte_carlo_normal <- function(N, sample_size, alpha, mu, sigma){
 # Plot the coverage as N increases and as sample size increases
 
 
-edf <- function(x, increment ) {
+edf <- function(x, increment) {
   out<-numeric(length(increment))
-  for(i in 1:length(increment)) {
+  length <- length(increment) #To stop it from recalculating this in the loop
+  for(i in 1:length) {
     indicator <- as.numeric(x<=increment[i])
     out[i] <- sum(indicator)/length(increment)
   }
   out
+}
+
+sample_edf <- function(x, n){ #Sampling from data with replacement
+  out <- rep(0, n)
+  values <- floor(runif(n, min = 1, max = length(x)))
+  for (i in 1:n){
+    out[i] <- x[values[i]]
+  }
+  return(out)
 }
 
 # test to see if the edf function matches the base R one
