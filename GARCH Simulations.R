@@ -72,6 +72,15 @@ residual_11 <- function(sigmaHat2,y){
 r <- residual_11(s,simSeries)
 
 ##### 3. Obtain bootstrap replicates #####
+sample_edf <- function(x, n){ 
+  out <- rep(0, n)
+  values <- floor(runif(n, min = 1, max = length(x)))
+  for (i in 1:n){
+    out[i] <- x[values[i]]
+  }
+  return(out)
+}
+
 bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample){
   n = length(y)
   sigmaStar2 <- rep(0,n)
