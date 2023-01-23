@@ -36,6 +36,13 @@ edf <- function(x, increment) {
   out
 }
 
+# test to see if the EDF function matches the base R one
+x <- rnorm(1000)
+plot(ecdf(x))
+lines(seq(-4, 4, length=1000), 
+      edf(x, seq(-4, 4, length=1000)), 
+      col='red')
+
 #Sampling from data with replacement
 sample_edf <- function(x, n){ 
   out <- rep(0, n)
@@ -46,7 +53,7 @@ sample_edf <- function(x, n){
   return(out)
 }
 
-#Makes bootstrap sample
+#Makes bootstrap sample as an B by n matrix
 make_boot_sample <- function(x, n, B){ 
   out <- matrix(0, nrow = B, ncol = n)
   for (b in 1:B){
@@ -55,9 +62,38 @@ make_boot_sample <- function(x, n, B){
   return(out)
 }
 
-# test to see if the EDF function matches the base R one
-x <- rnorm(1000)
-plot(ecdf(x))
-lines(seq(-4, 4, length=1000), 
-      edf(x, seq(-4, 4, length=1000)), 
-      col='red')
+#Performs a Block Bootstrap Sample
+block_sampler <- function(x, n, k) {
+  n_b <- ceiling(n/k) #Number of blocks in sample
+  out <- list()
+  start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+1))
+  
+  for(i in 1:n_b){
+    start <- start_indices[i]
+    length_list <- length(out)
+    if (length_list + k > n){ #Cuts off the last block
+      out <- append(out, x[start:(start+n-length_list-1)])
+      return(unlist(out))
+    }
+    
+    else if (length_list == n){
+      return(unlist(out))
+    }
+    
+    else { #Adds block to list
+      test <- x[start:(start+k-1)]
+      out <- append(out, x[start:(start+k-1)])
+    }
+  }
+    
+  return(unlist(out))
+}
+
+#Makes the block sample as a B by n matrix
+make_block_sample <- function(x, n, k, B){
+  out <- matrix(0, nrow = B, ncol = n)
+  for (b in 1:B){
+    out[b,] <- block_sampler(x, n, k)
+  }
+  return(out)
+}
