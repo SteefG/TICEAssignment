@@ -14,7 +14,7 @@ set.seed <- 123
 ##### GARCH(1,1) simulation #####
 GARCH11 <- function(omega, alpha, beta, n) {
   sigma2 <- rep(0, n) #Initalises the sigma^2 vector
-  sigma2[1] <- 1 #Randomly set the first value to 1
+  sigma2[1] <- 0.0001 #Randomly set the first value to 1
   
   eps <- rnorm(n, mean=0, sd = 1) #Generates white noise process with unit variance
   
@@ -29,7 +29,7 @@ GARCH11 <- function(omega, alpha, beta, n) {
   return(y)
 }
 
-simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 10000)
+simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)
 plot(simSeries)
 plot.ts(simSeries)
 
