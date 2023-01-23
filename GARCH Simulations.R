@@ -22,22 +22,27 @@ GARCH11 <- function(omega, alpha, beta, n) {
   y[1] <- sqrt(sigma2[1])*eps[1]
   
   for (i in 2:n) {
-    sigma2[i] <- omega + alpha * eps[i-1]^2 + beta * sigma2[i-1]
+    sigma2[i] <- omega + alpha * y[i-1]^2 + beta * sigma2[i-1]
     y[i] <- sqrt(sigma2[i])*eps[i]
   }
   
   return(y)
 }
 
-simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)
-
+simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 10000)
+plot(simSeries)
+plot.ts(simSeries)
 
 ##### 1. Estimate the parameters #####
 #estimate the parameters of a simple GARCH(1,1)
 garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                            mean.model = list(armaOrder = c(0, 0)))
+garchSpec_11
+
 #armaOrder = c(0, 0) because the mean equation doesn't have ARMA components
 garchFit_11 <- ugarchfit(data = simSeries, spec = garchSpec_11)
+garchFit_11
+
 #can have problems converging (??)
 coef(garchFit_11) #estimates are horrendous
 
