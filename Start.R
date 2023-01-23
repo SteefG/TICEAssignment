@@ -46,7 +46,7 @@ lines(seq(-4, 4, length=1000),
 #Sampling from data with replacement
 sample_edf <- function(x, n){ 
   out <- rep(0, n)
-  values <- floor(runif(n, min = 1, max = length(x)))
+  values <- floor(runif(n, min = 1, max = length(x)+1))
   for (i in 1:n){
     out[i] <- x[values[i]]
   }
@@ -66,7 +66,7 @@ make_boot_sample <- function(x, n, B){
 block_sampler <- function(x, n, k) {
   n_b <- ceiling(n/k) #Number of blocks in sample
   out <- list()
-  start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+1))
+  start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+2))
   
   for(i in 1:n_b){
     start <- start_indices[i]
@@ -97,3 +97,4 @@ make_block_sample <- function(x, n, k, B){
   }
   return(out)
 }
+
