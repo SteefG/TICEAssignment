@@ -40,12 +40,14 @@ simulationGARCH <- function(coeff,n){
 }
 
 #example with the generated coefficients
-simSeries <- simulationGARCH(trueCoef_11,1000)
+#simSeries <- simulationGARCH(trueCoef_11,1000)
+simSeries <- simulationGARCH(list(alpha=0.5,beta=0.1),1000)
+
 #no trend, looks stationary
 stationarity <- function(series){
   adftest <- adf(series, deterministics = "intercept")
   if(adftest$p.value < 0.05){
-    print("The series is stationary. Hurray!")
+    print("The series is stationary.")
   }
   else{
     ("The series is not stationary.")
@@ -114,14 +116,35 @@ bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample){
   return(yStar)
 }
 
-bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r)
+seriesStar <- bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r)
 
 
 ##### 4. Estimate the parameters of the bootstrap series #####
+garchStar_11 <- ugarchfit(data = seriesStar, spec = garchSpec_11)
+coef(garchStar_11)
+coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
+               as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
 
 
+##### 5. Bootstrap forecasts of future values #####
+bootForecast_11 <- function(y,w,a,b,K,eSample){ #K is the forecasting horizon
+  n = lenght(y)
+  sigmaStar2 <- rep(0,K)
+  sum = 0
+  for (j in 0:(n-2)){
+    sum <- sum + b^j 
+  }
+  sigmaStar2[1] <- (w/(1-a-b))+a
+  yStar <- rep(0,K)
+  eStar <- sample_edf(y,K) #e sampled from edf with replacement
+  yStar[1] <- eStar[1]*sqrt(sigmaStar2)[1]
+  for (k in 2:K){
+    sigmaStar2[i] <- w + a*(yStar[i-1])^2 + b*(sigmaStar2[i-1])^2
+    yStar[i] <- eStar[i]*sqrt(sigmaStar2)[i]
+  }
+  return(yStar)
+}
 
-
-
+bootForecast_11(seriesStar,coeffStar[1],coeffStar[2],coeffStar[3],5)
 
 
