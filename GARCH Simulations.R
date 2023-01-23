@@ -60,6 +60,7 @@ stationarity(simSeries)
 
 #find the best lag order for a GARCH model (to do later, first GARCH(1,1))
 
+##### 1. Estimate the parameters #####
 #estimate the parameters of a simple GARCH(1,1)
 garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                            mean.model = list(armaOrder = c(0, 0)))
@@ -67,5 +68,60 @@ garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)),
 garchFit_11 <- ugarchfit(data = simSeries, spec = garchSpec_11)
 #can have problems converging (??)
 coef(garchFit_11) #estimates are horrendous
+
+#theta_hat vector, containing the estimated (omega, alpha, beta)
+estCoeff_11 <- c(as.numeric(coef(garchFit_11)[2]), 
+                 as.numeric(coef(garchFit_11)[3]), as.numeric(coef(garchFit_11)[4]))
+
+##### 2. Compute the volatility & residuals #####
+#estimated conditional variances
+estCondVar_11 <- function(y, w, a, b){
+  n = length(y)
+  sigmaHat2 <- rep(0,n)
+  sigmaHat2[1] <- w/(1-a-b) #marginal variance
+  for (i in 2:n){
+    sigmaHat2[i] <- w + a*(y[i-1])^2 + b*(sigmaHat2[i-1])^2
+  }
+  return(sigmaHat2)
+}
+
+s <- estCondVar_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3])
+
+#residuals
+residual_11 <- function(sigmaHat2,y){
+  n = length(y)
+  e <- rep(0,n)
+  for (i in 1:n){
+    e[i] <- y[i]/sqrt(sigmaHat2[i])
+  }
+  return(e)
+}
+
+r <- residual_11(s,simSeries)
+
+##### 3. Obtain bootstrap replicates #####
+bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample){
+  n = length(y)
+  sigmaStar2 <- rep(0,n)
+  sigmaStar2[1] <- sigmaHat2[1]
+  yStar <- rep(0,n)
+  eStar <- sample_edf(y,n) #e sampled from edf with replacement
+  yStar[1] <- eStar[1]*sqrt(sigmaStar2)[1]
+  for (i in 2:n){
+    sigmaStar2[i] <- w + a*(yStar[i-1])^2 + b*(sigmaStar2[i-1])^2
+    yStar[i] <- eStar[i]*sqrt(sigmaStar2)[i]
+  }
+  return(yStar)
+}
+
+bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r)
+
+
+##### 4. Estimate the parameters of the bootstrap series #####
+
+
+
+
+
 
 
