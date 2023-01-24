@@ -108,7 +108,7 @@ bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample, k){
 bootForecast_11 <- function(y,w,a,b,K,eSample,blockSize){ #K is the forecasting horizon
   n = length(y)
   sigmaStar2 <- rep(0,K)
-  sigmaStar2[1] <- (w/(1-a-b)) + a*sum((y[1:(n-2)])^2 - (w/(1-a-b)))
+  sigmaStar2[1] <- (w/(1-a-b)) + (a*sum((y[1:(n-2)])^2 - (w/(1-a-b))))
   yStar <- rep(0,K)
   eStar <- block_sampler(r,K,blockSize) #e sampled from EDF of residuals with replacement
   yStar[1] <- eStar[1]*sqrt(sigmaStar2)[1]
@@ -142,6 +142,8 @@ make_y_forecast <- function(y, K, B, blockSize){
 make_sigma_forecast <- function(y, K, B, blockSize){
   n <- length(y)
   out <- matrix(0, nrow = B, ncol = K)
+  #The estCoeff are constants we could put the calculation in this 
+  #function depends on what you want
   s <- estCondVar_11(y,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3])
   r <- residual_11(s,y)
   
