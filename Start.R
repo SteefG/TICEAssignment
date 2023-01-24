@@ -17,7 +17,7 @@ monte_carlo_normal <- function(N, sample_size, alpha, mu, sigma){
     CI_lower <- (mean(rand_norm)-(qnorm((1-(alpha/2)))*(sqrt(variance(rand_norm))/sqrt(sample_size))))
     CI_upper <- (mean(rand_norm)+(qnorm((1-(alpha/2)))*(sqrt(variance(rand_norm))/sqrt(sample_size))))
     if (mu >= CI_lower && mu <= CI_upper) {
-    count <- count + 1
+      count <- count + 1
     }
   }
   coverage <- count/N
@@ -43,9 +43,10 @@ lines(seq(-4, 4, length=1000),
       edf(x, seq(-4, 4, length=1000)), 
       col='red')
 
-#Sampling from data with replacement
+#Sampling from data with replacement, returns an n length vector
 sample_edf <- function(x, n){ 
   out <- rep(0, n)
+  #+1 added to upper-bound since we floor the random number
   values <- floor(runif(n, min = 1, max = length(x)+1))
   for (i in 1:n){
     out[i] <- x[values[i]]
@@ -62,11 +63,11 @@ make_boot_sample <- function(x, n, B){
   return(out)
 }
 
-#Performs a Block Bootstrap Sample
+#Performs a Block Bootstrap Sample, returns a n length vector
 block_sampler <- function(x, n, k) {
   n_b <- ceiling(n/k) #Number of blocks in sample
   out <- list()
-  start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+2))
+  start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+2)) 
   
   for(i in 1:n_b){
     start <- start_indices[i]
@@ -76,7 +77,7 @@ block_sampler <- function(x, n, k) {
       return(unlist(out))
     }
     
-    else if (length_list == n){
+    else if (length_list == n){ #As a fail-safe
       return(unlist(out))
     }
     
@@ -85,7 +86,7 @@ block_sampler <- function(x, n, k) {
       out <- append(out, x[start:(start+k-1)])
     }
   }
-    
+  
   return(unlist(out))
 }
 
