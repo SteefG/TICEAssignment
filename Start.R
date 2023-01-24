@@ -54,7 +54,7 @@ sample_edf <- function(x, n){
   return(out)
 }
 
-#Makes bootstrap sample as an B by n matrix
+#Makes bootstrap sample as a B by n matrix
 make_boot_sample <- function(x, n, B){ 
   out <- matrix(0, nrow = B, ncol = n)
   for (b in 1:B){
