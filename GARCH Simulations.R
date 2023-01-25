@@ -31,15 +31,15 @@ GARCH11 <- function(omega, alpha, beta, n) {
   y_vec <- matrix(y, nrow = n, ncol = 1)
   sigma2_vec <- matrix(y, nrow = n, ncol = 1)
   garch11 <- cbind(y_vec, sigma2_vec)
-  colnames(garch11) <- c("y","simga^2")
+  colnames(garch11) <- c("y","sigma^2")
   
   return(garch11)
 }
 
+sim <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)
+simSeries <- sim[,1]
+simVolatility <- sim[,2]
 
-simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)[,1]
-simVolatility <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)[,2]
-#plot(simSeries)
 plot.ts(simSeries)
 plot.ts(simVolatility)
 
@@ -50,7 +50,7 @@ garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)),
 garchSpec_11
 
 #armaOrder = c(0, 0) because the mean equation doesn't have ARMA components
-garchFit_11 <- ugarchfit(data = simSeries, spec = garchSpec_11)
+garchFit_11 <- ugarchfit(data = simVolatility, spec = garchSpec_11)
 garchFit_11
 
 #can have problems converging (??)
