@@ -101,7 +101,7 @@ bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample, k){
   return(yStar)
 }
 
-#seriesStar <- bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r, 10) #block length of 10 for testing
+seriesTest <- bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r, 10) #block length of 10 for testing
 
 
 ##### 4. Estimate the parameters of the bootstrap series #####
@@ -115,7 +115,11 @@ bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample, k){
 bootForecast_11 <- function(y,w,a,b,K,eSample,blockSize){ #K is the forecasting horizon
   n = length(y)
   sigmaStar2 <- rep(0,K)
-  sigmaStar2[1] <- (w/(1-a-b)) + (a*sum((y[1:(n-2)])^2 - (w/(1-a-b))))
+  sum <- 0
+  for (i in 0:(n-2)){
+    sum <- sum + (b^i)*((y[n-i-1]^2) - (w/(1-a-b)))
+  }
+  sigmaStar2[1] <- (w/(1-a-b)) + a*sum
   yStar <- rep(0,K)
   eStar <- block_sampler(r,K,blockSize) #e sampled from EDF of residuals with replacement
   yStar[1] <- eStar[1]*sqrt(sigmaStar2)[1]
@@ -166,7 +170,7 @@ make_sigma_forecast <- function(y, K, B, blockSize){
 
 #Definitely have to play around with the block length. 100 seems to be ok but still not great. 
 #Sometimes may fail to converge not sure why
-forecast <- make_y_forecast(simSeries, 5, 10, 100)
+make_y_forecast(simSeries, 5, 10, 100)
 make_sigma_forecast(simSeries, 5, 10, 100)
 
 get_y_CI <- function(y, K, B, blockSize){ #gets Kth forecast CI
@@ -176,4 +180,4 @@ get_y_CI <- function(y, K, B, blockSize){ #gets Kth forecast CI
   return(c(lower,upper))
 }
 
-get_CI(simSeries, 5, 10, 100)
+get_y_CI(simSeries, 5, 10, 100)
