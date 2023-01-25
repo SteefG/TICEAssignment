@@ -16,7 +16,7 @@ set.seed(123)
 ##### GARCH(1,1) simulation #####
 GARCH11 <- function(omega, alpha, beta, n) {
   sigma2 <- rep(0, n) #Initialises the sigma^2 vector
-  sigma2[1] <- 0.0001 #Randomly set the first value to 1
+  sigma2[1] <- 1 #Randomly set the first value to 1
   
   eps <- rnorm(n, mean=0, sd = 1) #Generates white noise process with unit variance
   
@@ -29,14 +29,14 @@ GARCH11 <- function(omega, alpha, beta, n) {
   }
   
   y_vec <- matrix(y, nrow = n, ncol = 1)
-  sigma2_vec <- matrix(y, nrow = n, ncol = 1)
+  sigma2_vec <- matrix(sigma2, nrow = n, ncol = 1)
   garch11 <- cbind(y_vec, sigma2_vec)
   colnames(garch11) <- c("y","sigma^2")
   
   return(garch11)
 }
 
-sim <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)
+sim <- GARCH11(omega = 0.1, alpha = 0.5, beta = 0.1, n = 1000)
 simSeries <- sim[,1]
 simVolatility <- sim[,2]
 
@@ -47,18 +47,17 @@ plot.ts(simVolatility)
 #estimate the parameters of a simple GARCH(1,1)
 garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                            mean.model = list(armaOrder = c(0, 0)))
-garchSpec_11
+
 
 #armaOrder = c(0, 0) because the mean equation doesn't have ARMA components
-garchFit_11 <- ugarchfit(data = simVolatility, spec = garchSpec_11)
-garchFit_11
+garchFit_11 <- ugarchfit(spec = garchSpec_11, data = simSeries)
 
-#can have problems converging (??)
-coef(garchFit_11) #estimates are horrendous
+
+coef(garchFit_11)
 
 #theta_hat vector, containing the estimated (omega, alpha, beta)
-estCoeff_11 <- c(as.numeric(coef(garchFit_11)[2]), 
-                 as.numeric(coef(garchFit_11)[3]), as.numeric(coef(garchFit_11)[4]))
+estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+
 
 ##### 2. Compute the volatility & residuals #####
 #estimated conditional variances
@@ -106,7 +105,7 @@ bootRep_11 <- function(y,w,a,b,sigmaHat2,eSample, k){
 
 
 ##### 4. Estimate the parameters of the bootstrap series #####
-#garchStar_11 <- ugarchfit(data = seriesStar, spec = garchSpec_11)
+#garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
 #coef(garchStar_11)
 #coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
 #               as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4])) #Theta star hat
@@ -138,7 +137,7 @@ make_y_forecast <- function(y, K, B, blockSize){
 
   for (b in 1:B){
     seriesStar <- bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r, blockSize)
-    garchStar_11 <- ugarchfit(data = seriesStar, spec = garchSpec_11)
+    garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
     coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
                    as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
     out[b,] <- bootForecast_11(seriesStar,coeffStar[1],coeffStar[2],coeffStar[3],K,r,blockSize)[1:K]
