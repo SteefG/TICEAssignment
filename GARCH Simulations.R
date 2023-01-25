@@ -167,5 +167,14 @@ make_sigma_forecast <- function(y, K, B, blockSize){
 
 #Definitely have to play around with the block length. 100 seems to be ok but still not great. 
 #Sometimes may fail to converge not sure why
-make_y_forecast(simSeries, 5, 10, 100)
+forecast <- make_y_forecast(simSeries, 5, 10, 100)
 make_sigma_forecast(simSeries, 5, 10, 100)
+
+get_y_CI <- function(y, K, B, blockSize){ #gets Kth forecast CI
+  forecast <- make_y_forecast(y, K, B, blockSize)
+  lower <- B/sum(forecast[,K] >= 0.025)
+  upper <- B/sum(forecast[,K] <= 0.975)
+  return(c(lower,upper))
+}
+
+get_CI(simSeries, 5, 10, 100)
