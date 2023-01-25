@@ -28,12 +28,20 @@ GARCH11 <- function(omega, alpha, beta, n) {
     y[i] <- sqrt(sigma2[i])*eps[i]
   }
   
-  return(y)
+  y_vec <- matrix(y, nrow = n, ncol = 1)
+  sigma2_vec <- matrix(y, nrow = n, ncol = 1)
+  garch11 <- cbind(y_vec, sigma2_vec)
+  colnames(garch11) <- c("y","simga^2")
+  
+  return(garch11)
 }
 
-simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)
-plot(simSeries)
+
+simSeries <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)[,1]
+simVolatility <- GARCH11(omega = 0.01, alpha = 0.1, beta = 0.3, n = 1000)[,2]
+#plot(simSeries)
 plot.ts(simSeries)
+plot.ts(simVolatility)
 
 ##### 1. Estimate the parameters #####
 #estimate the parameters of a simple GARCH(1,1)
