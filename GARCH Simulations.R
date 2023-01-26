@@ -160,7 +160,7 @@ make_sigma_forecast <- function(y, K, B, blockSize){
   
   for (b in 1:B){ #Repeats bootstrap B times
     seriesStar <- bootRep_11(simSeries,estCoeff_11[1],estCoeff_11[2],estCoeff_11[3],s,r, blockSize)
-    garchStar_11 <- ugarchfit(data = seriesStar, spec = garchSpec_11)
+    garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
     coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
                    as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
     out[b,] <- bootForecast_11(seriesStar,coeffStar[1],coeffStar[2],coeffStar[3],K,r,blockSize)[(K+1):(2*K)]
@@ -170,24 +170,33 @@ make_sigma_forecast <- function(y, K, B, blockSize){
 
 #Definitely have to play around with the block length. 100 seems to be ok but still not great. 
 #Sometimes may fail to converge not sure why
-yK <- make_y_forecast(simSeries, 5, 10, 100)
-sigma2K <- make_sigma_forecast(simSeries, 5, 10, 100)
+#yK <- make_y_forecast(simSeries, 5, 100, 100)
+#sigma2K <- make_sigma_forecast(simSeries, 5, 100, 100)
 
 
-#for k= 1...K
-K=ncol(yK)
-for (k in 1:K){
-  sort(yK[,k])
-  sort(sigma2K[,k])
-}
-
-
-
-get_y_CI <- function(y, K, B, blockSize){ #gets Kth forecast CI
+get_y_CI <- function(y, K, B, blockSize){ #gets Kth forecast CI for y
   forecast <- make_y_forecast(y, K, B, blockSize)
-  lower <- B/sum(forecast[,K] >= 0.025)
-  upper <- B/sum(forecast[,K] <= 0.975)
+  
+  forecast[,K] = sort(forecast[,K])
+  
+  lower <- quantile(forecast[,K], 0.025)
+  upper <- quantile(forecast[,K], 0.975)
   return(c(lower,upper))
 }
 
-get_y_CI(simSeries, 5, 10, 100)
+
+get_sigma_CI <- function(y, K, B, blockSize){ #gets Kth forecast CI for simga^2
+  forecast <- make_sigma_forecast(y, K, B, blockSize)
+  
+  forecast[,K] = sort(forecast[,K])
+  
+  lower <- quantile(forecast[,K], 0.025)
+  upper <- quantile(forecast[,K], 0.975)
+  return(c(lower,upper))
+}
+
+get_y_CI(simSeries, 5, 10, 10)
+get_sigma_CI(simSeries, 5, 10, 10)
+
+
+
