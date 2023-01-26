@@ -199,4 +199,18 @@ get_y_CI(simSeries, 5, 10, 10)
 get_sigma_CI(simSeries, 5, 10, 10)
 
 
+#Comparing asymptotically
+get_asymptotic_CI <- function(y, alpha){
+  
+  CI_lower <- (mean(y)-(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  CI_upper <- (mean(y)+(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  
+  return(c(CI_lower,CI_upper))
+  
+}
+
+get_asymptotic_CI(simSeries,0.05)
+get_asymptotic_CI(simVolatility,0.05)
+
+
 
