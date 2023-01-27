@@ -9,7 +9,6 @@ reject <- rep(0, times = nr.sim)								# Vector to store rejections
 for (i in 1:nr.sim){											# Start the simulations
     ## Step 1: Simulate ##
     X <- rnorm(n, mean = mu)									# Draw X
-
     ## Step 2: Apply ##
     X.bar <- mean(X)											# Sample mean of X
     St.Dev <- sd(X)												# Standard deviation of X

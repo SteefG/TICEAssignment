@@ -1,14 +1,7 @@
 #clear global environment
-rm(list = ls())
+# rm(list = ls())
 
-rand_norm <- rnorm(n = 10, mean = 0, sd = 1)
 
-hist(rand_norm, xlab = "Random value (X)", col = "grey",
-     main = "", cex.lab = 1.5, cex.axis = 1.5)
-
-qnorm(0.05)
-qnorm(0.95)
-qnorm(0.975)
 
 monte_carlo_normal <- function(N, sample_size, alpha, mu, sigma){
   count <- 0
@@ -26,22 +19,16 @@ monte_carlo_normal <- function(N, sample_size, alpha, mu, sigma){
 # Plot the coverage as N increases and as sample size increases
 
 #Empirical Distribution Function implementation
-edf <- function(x, increment) {
-  out<-numeric(length(increment))
-  length <- length(increment) #To stop it from recalculating this in the loop
+edf <- function(x, h) {
+  out<-numeric(length(h))
+  length <- length(h) #To stop it from recalculating this in the loop
   for(i in 1:length) {
-    indicator <- as.numeric(x<=increment[i])
-    out[i] <- sum(indicator)/length(increment)
+    indicator <- as.numeric(x<=h[i])
+    out[i] <- sum(indicator)/length(h)
   }
   out
 }
 
-# test to see if the EDF function matches the base R one
-x <- rnorm(1000)
-plot(ecdf(x))
-lines(seq(-4, 4, length=1000), 
-      edf(x, seq(-4, 4, length=1000)), 
-      col='red')
 
 #Sampling from data with replacement, returns an n length vector
 sample_edf <- function(x, n){ 
@@ -65,6 +52,8 @@ make_boot_sample <- function(x, n, B){
 
 #Performs a Block Bootstrap Sample, returns a n length vector
 block_sampler <- function(x, n, k) {
+  ### Takes parameters, x - series, n - bootstrap sample size and block length k.
+  
   n_b <- ceiling(n/k) #Number of blocks in sample
   out <- list()
   start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+2)) 
