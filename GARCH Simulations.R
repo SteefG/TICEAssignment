@@ -220,31 +220,37 @@ make_sigma_forecast <- function(y, forecast_length, B, block_size){
 #sigma2K <- make_sigma_forecast(simSeries, 5, 100, 100)
 
 
-get_y_CI <- function(y, forecast_length, B, block_size){ #gets Kth forecast CI for y
+
+get_y_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for y
   
   forecast <- make_y_forecast(y, forecast_length, B, block_size)
   
+
   forecast[,forecast_length] = sort(forecast[,forecast_length])
   
-  lower <- quantile(forecast[,forecast_length], 0.025)
-  upper <- quantile(forecast[,forecast_length], 0.975)
+  lower <- quantile(forecast[,forecast_length], (alpha/2))
+  upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
+
   return(c(lower,upper))
 }
 
 
-get_sigma_CI <- function(y, forecast_length, B, block_size){ #gets Kth forecast CI for simga^2
-  
+
+get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for simga^2
+
   forecast <- make_sigma_forecast(y, forecast_length, B, block_size)
   
+
   forecast[,forecast_length] = sort(forecast[,forecast_length])
   
-  lower <- quantile(forecast[,forecast_length], 0.025)
-  upper <- quantile(forecast[,forecast_length], 0.975)
+  lower <- quantile(forecast[,forecast_length], (alpha/2))
+  upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
+
   return(c(lower,upper))
 }
 
-get_y_CI(simSeries, 5, 10, 10)
-get_sigma_CI(simSeries, 5, 10, 10)
+get_y_CI(simSeries, 5, 10, 10, 0.05)
+get_sigma_CI(simSeries, 5, 10, 10, 0.05)
 
 
 #Comparing asymptotically
