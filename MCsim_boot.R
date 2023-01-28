@@ -3,12 +3,12 @@ set.seed(123)																								# Set the true value of the mean
 source("Start.R")
 source("GARCH Simulations.R")
 
-n = 100
-nr.sim = 1
-forecast_length = 5
-block_size = 5
-B = 10
-alpha = 0.05
+#n = 100
+#nr.sim = 1
+#forecast_length = 5
+#block_size = 5
+#B = 10
+#alpha = 0.05
 
 monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha){
     accept_y <- rep(0, times = nr.sim)  # Vector to store acceptances
@@ -57,4 +57,4 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
 }
 
 
-monte_carlo_simulation(100,1,2,5,10,0.05)
+monte_carlo_simulation(100,3,2,5,10,0.05)
