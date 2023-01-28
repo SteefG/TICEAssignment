@@ -231,7 +231,7 @@ get_y_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth foreca
   lower <- quantile(forecast[,forecast_length], (alpha/2))
   upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
 
-  return(c(lower,upper))
+  return(list(lb = lower, ub = upper))
 }
 
 
@@ -246,7 +246,7 @@ get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth fo
   lower <- quantile(forecast[,forecast_length], (alpha/2))
   upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
 
-  return(c(lower,upper))
+  return(c(lb=lower, ub=upper))
 }
 
 get_y_CI(simSeries, 5, 10, 10, 0.05)
@@ -256,10 +256,10 @@ get_sigma_CI(simSeries, 5, 10, 10, 0.05)
 #Comparing asymptotically
 get_asymptotic_CI <- function(y, alpha){
   
-  CI_lower <- (mean(y)-(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
-  CI_upper <- (mean(y)+(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  lower <- (mean(y)-(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  upper <- (mean(y)+(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
   
-  return(c(CI_lower,CI_upper))
+  return(list(lb=lower, ub=upper))
   
 }
 
