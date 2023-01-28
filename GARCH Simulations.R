@@ -87,7 +87,7 @@ estimate_conditional_variances <- function(y){
   return(sigmaHat2)
 }
 
-estimated_conditional_variances<- estimate_conditional_variances(simSeries)
+estimated_conditional_variances <- estimate_conditional_variances(simSeries)
 
 #residuals
 residual_11 <- function(y){

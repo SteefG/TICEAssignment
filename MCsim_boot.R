@@ -1,39 +1,59 @@
-set.seed(515)													# Set the seed
-nr.sim <- 2000													# Number of simulations
-B <- 499														# Number of bootstrap replications
-n <- 100														# Sample size
-alpha <- 0.05													# Nominal level of the test
-mu <- 0															# Set the true value of the mean
-reject <- rep(0, times = nr.sim)								# Vector to store rejections
+set.seed(123)																								# Set the true value of the mean
 
-for (i in 1:nr.sim){											# Start the simulations
-    ## Step 1: Simulate ##
-    X <- rnorm(n, mean = mu)									# Draw X
-    ## Step 2: Apply ##
-    X.bar <- mean(X)											# Sample mean of X
-    St.Dev <- sd(X)												# Standard deviation of X
-    Q <- sqrt(n)*X.bar / St.Dev									# Test statistic
+source("Start.R")
+source("GARCH Simulations.R")
 
-    Q.star <- rep(NA, times = B)								# Vector for bootstrap quantities
-    for (b in 1:B) {
-        J <- sample.int(n, size = n, replace = TRUE)			# Draw the indices J
-        X.star <- X[J]											# Draw the bootstrap sample
-        X.bar.star <- mean(X.star)								# Bootstrap sample mean
-        St.Dev.star <- sd(X.star)								# Bootstrap standard deviation
-        Q.star[b] <- sqrt(n)*(X.bar.star - X.bar) / St.Dev.star	# Bootstrap test statistic
+n = 100
+nr.sim = 1
+forecast_length = 5
+block_size = 5
+B = 10
+alpha = 0.05
+
+monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha){
+    accept_y <- rep(0, times = nr.sim)  # Vector to store acceptances
+    accept_sigma2 <- rep(0, times = nr.sim)
+    
+    for (i in 1:nr.sim){
+        ## Step 1: Simulate ##
+        sim <- GARCH11(w = 0.1, a = 0.5, b = 0.1, (n+forecast_length))
+        simSeries_k <- sim[n+forecast_length,1] #Obtain the quantity of interest (n+kth oberservation)
+        simVolatility_k <- sim[n+forecast_length,2]
+        simSeries <- head(sim[,1],-forecast_length)
+        
+        
+        
+        ## Step 2: Apply ##
+        ##### 1. Estimate the parameters #####
+        garchFit_11 <- ugarchfit(spec = garchSpec_11, data = simSeries)
+        estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+        
+        
+        ##### 2. Compute the volatility & residuals #####
+        estimated_conditional_variances <- estimate_conditional_variances(simSeries)
+        
+        resids <- residual_11(simSeries)
+        
+        
+        ##### 3. Obtain the confidence intervals #####
+        series_CI <- get_y_CI(simSeries, forecast_length, B, block_size, alpha)
+        print(series_CI)
+    
+        volatility_CI <- get_sigma_CI(simSeries, forecast_length, B, block_size, alpha)
+        print(volatility_CI)
+        
+        
+        ## Step 3: Evaluate ##
+        if (simSeries_k > series_CI[2] || simSeries_k < series_CI[1]) {accept_y[i] <- 1}
+        if (simVolatility_k > volatility_CI[2] || simVolatility_k < volatility_CI[1]) {accept_sigma2[i] <- 1}
     }
-    cv.star <- quantile(Q.star, probs = 1-alpha)				# Bootstrap critical value
-
-    ## Step 3: Evaluate ##
-    if (Q > cv.star) {reject[i] <- 1}							# Check if the null hypothesis is rejected
+    
+    ## Step 4: Summarize ##
+    coverage_probability_y <- mean(accept_y)
+    coverage_probability_sigma2 <- mean(accept_sigma2)
+    
+    return(c(coverage_probability_y,coverage_probability_sigma2))
 }
 
-## Step 4: Summarize ##
-ERF <- mean(reject)												# Empirical rejection frequency
 
-## Give output on screen ##
-if (mu == 0) {
-    print(paste("Size using bootstrap:", ERF))
-} else if (mu > 0) {
-    print(paste("Power using bootstrap:", ERF))
-}
+monte_carlo_simulation(100,1,2,5,10,0.05)
