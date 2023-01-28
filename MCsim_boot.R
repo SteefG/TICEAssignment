@@ -20,6 +20,7 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
         simSeries_k <- sim[n+forecast_length,1] #Obtain the quantity of interest (n+kth oberservation)
         simVolatility_k <- sim[n+forecast_length,2]
         simSeries <- head(sim[,1],-forecast_length)
+        print(c(simSeries_k,simVolatility_k))
         
         
         
@@ -44,8 +45,8 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
         
         
         ## Step 3: Evaluate ##
-        if (simSeries_k > series_CI[2] || simSeries_k < series_CI[1]) {accept_y[i] <- 1}
-        if (simVolatility_k > volatility_CI[2] || simVolatility_k < volatility_CI[1]) {accept_sigma2[i] <- 1}
+        if (simSeries_k < series_CI[2] && simSeries_k > series_CI[1]) {accept_y[i] <- 1}
+        if (simVolatility_k < volatility_CI[2] && simVolatility_k > volatility_CI[1]) {accept_sigma2[i] <- 1}
     }
     
     ## Step 4: Summarize ##
