@@ -39,6 +39,8 @@ GARCH11 <- function(w, a, b, n) {
 estimate_conditional_variances <- function(y){
   ### Takes as input, series y that is a GARCH(1,1) and outputs a vector of estimated conditional variances
   
+  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             mean.model = list(armaOrder = c(0, 0)))
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
   
@@ -73,15 +75,20 @@ residual_11 <- function(y){
 }
 
 
-bootRep_11 <- function(y, forecast_length, B, block_size, alpha){
+bootRep_11 <- function(y, block_size){
   ### Takes as input the series y and block size block_size and outputs a bootstrapped ystar vector
+  
+  
+  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             mean.model = list(armaOrder = c(0, 0)))
   
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+  ##### Why are those in the function? 
   sigmaHat2 <- estimate_conditional_variances(y)
   residuals <- residual_11(y)
   
-  sigmaStar2 <- rep(0, length(y))
+  sigmaStar2 <- rep(0, length(y)) ##### Change variable name cuz a bit confusing
   sigmaStar2[1] <- sigmaHat2[1]
   
   yStar <- rep(0, length(y))
@@ -100,6 +107,12 @@ bootRep_11 <- function(y, forecast_length, B, block_size, alpha){
 
 
 bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is the forecasting horizon
+  
+  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             mean.model = list(armaOrder = c(0, 0)))
+  
+  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             mean.model = list(armaOrder = c(0, 0)))
   
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
@@ -129,6 +142,9 @@ bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is
 make_y_forecast <- function(y, forecast_length, B, block_size){
   
   out <- matrix(0, nrow = B, ncol = forecast_length)
+  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             mean.model = list(armaOrder = c(0, 0)))
+  
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
   estimated_conditional_variances<- estimate_conditional_variances(y)
@@ -148,6 +164,9 @@ make_y_forecast <- function(y, forecast_length, B, block_size){
 #Makes bootstrap forecasts for sigma as a B by forecast_length matrix
 make_sigma_forecast <- function(y, forecast_length, B, block_size){
   
+  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             mean.model = list(armaOrder = c(0, 0)))
+  
   
   out <- matrix(0, nrow = B, ncol = forecast_length)
   #The estCoeff are constants we could put the calculation in this 
@@ -156,7 +175,7 @@ make_sigma_forecast <- function(y, forecast_length, B, block_size){
   estimated_conditional_variances<- estimate_conditional_variances(y)
   
   for (b in 1:B){ #Repeats bootstrap B times
-    seriesStar <- bootRep_11(simSeries, block_size)
+    seriesStar <- bootRep_11(y, block_size)
     garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
     coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
                    as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
@@ -232,9 +251,9 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     
     ## Step 2: Apply ##
     ##### 1. Estimate the parameters #####
-    #garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), mean.model = list(armaOrder = c(0, 0)))
-    #garchFit_11 <- ugarchfit(spec = garchSpec_11, data = simSeries)
-    #estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+    garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), mean.model = list(armaOrder = c(0, 0)))
+    garchFit_11 <- ugarchfit(spec = garchSpec_11, data = simSeries)
+    estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
     
     
     
