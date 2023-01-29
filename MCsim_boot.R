@@ -53,7 +53,7 @@ make_block_sample <- function(x, n, k, B){
 
 
 
-n = 100
+n = 10000
 nr.sim = 1
 forecast_length = 5
 block_size = 5
