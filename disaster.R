@@ -61,17 +61,18 @@ residual_11 <- function(y){
   ### Takes as input a series y and outputs the residuals after fitting a GARCH(1,1)
   
   sigmaHat2 <- estimate_conditional_variances(y)
-  print(sigmaHat2)
+  # print(sigmaHat2)
+  # print("This was a sigma Hat")
   
-  e <- rep(0, length(y))
-  for (i in 1:length(y)){
-    e[i] <- y[i]/sqrt(sigmaHat2[i])
-  }
+  # e <- rep(0, length(y))
+  # for (i in 1:length(y)){
+  #   e[i] <- y[i]/sqrt(sigmaHat2[i])
+  # }
   resids <- y[1:length(y)]/sqrt(sigmaHat2[1:length(y)])
   # print(resids)
   # print("This is e")
   # print(e)
-  return(e)
+  return(resids)
 }
 
 
@@ -245,7 +246,8 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     simSeries_k <- sim[n+forecast_length,1] #Obtain the quantity of interest (n+kth oberservation)
     simVolatility_k <- sim[n+forecast_length,2]
     simSeries <- head(sim[,1],-forecast_length)
-    print(c(simSeries_k,simVolatility_k))
+    # print(c(simSeries_k,simVolatility_k))
+    # print("This was in the MONTE")
     
     
     
