@@ -229,8 +229,15 @@ get_y_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth foreca
 
   forecast[,forecast_length] = sort(forecast[,forecast_length])
   
+  print("forecast y is ")
+  print(forecast)
+  
   lower <- quantile(forecast[,forecast_length], (alpha/2))
   upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
+  
+  print(lower)
+  print(upper)
+  print("BReak")
 
   return(list(lb = lower, ub = upper))
 }
@@ -250,7 +257,7 @@ get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth fo
   return(c(lb=lower, ub=upper))
 }
 
-get_y_CI(simSeries, 5, 499, 10, 0.05)
+get_y_CI(simSeries, 5, 5, 5, 0.05)
 get_sigma_CI(simSeries, 5, 10, 10, 0.05)
 
 

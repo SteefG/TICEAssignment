@@ -5,44 +5,13 @@ library(bootUR)
 library(rugarch)
 library(fGarch)
 
-set.seed(123)																								# Set the true value of the mean
+set.seed(123)	
 
-# source("Start.R")
-
+# Function take checks if two arrays have same elements
 SameElements <- function(a, b) return(identical(sort(a), sort(b)))
-SameElements(c(1, 2, 3), c(1, 3, 2))  # TRUE
-SameElements(c(1, 2, 3), c(1, 1, 3, 2))  # FALSE
 
-#Sampling from data with replacement, returns an n length vector
-sample_edf <- function(x, n){ 
-  
-  out <- rep(0, n)
-  out1 <- rep(0, n)
-  #+1 added to upper-bound since we floor the random number
-  values <- floor(runif(n, min = 1, max = length(x)+1))
-  for (i in 1:n){
-    out[i] <- x[values[i]]
-  }
-  out1[1:n] <- x[values[1:n]]
-  print(SameElements(out1, out))
-  
-  return(out)
-}
 
-#Makes bootstrap sample as a B by n matrix
-make_boot_sample <- function(x, n, B){ 
-  out <- matrix(0, nrow = B, ncol = n)
-  out1 <- matrix(0, nrow = B, ncol = n)
-  for (b in 1:B){
-    out[b,] <- sample_edf(x, n)
-  }
-  out1[1:B,] <- apply(X = x, FUN = sample_edf, arg.2 = n)
-  print(SameElements(out1, out))
-  
-  return(out)
-}
-
-#Performs a Block Bootstrap Sample, returns a n length vector
+# Performs a Block Bootstrap Sample, returns a n length vector
 block_sampler <- function(x, n, k) {
   ### Takes parameters, x - series, n - bootstrap sample size and block length k.
   
@@ -71,24 +40,11 @@ block_sampler <- function(x, n, k) {
   return(unlist(out))
 }
 
-#Makes the block sample as a B by n matrix
-make_block_sample <- function(x, n, k, B){
-  out <- matrix(0, nrow = B, ncol = n)
-  out1 <- matrix(0, nrow = B, ncol = n)
-  for (b in 1:B){
-    out[b,] <- block_sampler(x, n, k)
-  }
-  out1[1:B,] <- apply(X = x, FUN = block_sampler, arg.2 = n, arg.3 = k)
-  print(SameElements(out1, out))
-  
-  return(out)
-}
-
-
 ##### GARCH(1,1) simulation #####
 GARCH11 <- function(w, a, b, n) {
   ### Takes as input parameters, w, a, b and n signifying the parameters of a GARCH(1,1) and simulates a GARCH series 
   ### of length n.
+  
   sigma2 <- rep(0, n) #Initialises the sigma^2 vector
   sigma2[1] <- 1 #Randomly set the first value to 1
   
@@ -131,25 +87,13 @@ estimate_conditional_variances <- function(y){
   
 }
 
-
 residual_11 <- function(y){
   ### Takes as input a series y and outputs the residuals after fitting a GARCH(1,1)
   
   sigmaHat2 <- estimate_conditional_variances(y)
-  # print(sigmaHat2)
-  # print("This was a sigma Hat")
-  
-  # e <- rep(0, length(y))
-  # for (i in 1:length(y)){
-  #   e[i] <- y[i]/sqrt(sigmaHat2[i])
-  # }
   resids <- y[1:length(y)]/sqrt(sigmaHat2[1:length(y)])
-  # print(resids)
-  # print("This is e")
-  # print(e)
   return(resids)
 }
-
 
 bootRep_11 <- function(y, block_size){
   ### Takes as input the series y and block size block_size and outputs a bootstrapped ystar vector
@@ -181,14 +125,11 @@ bootRep_11 <- function(y, block_size){
   return(yStar)
 }
 
-
 bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is the forecasting horizon
   
   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                              mean.model = list(armaOrder = c(0, 0)))
   
-  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
-                             mean.model = list(armaOrder = c(0, 0)))
   
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
@@ -213,83 +154,95 @@ bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is
   return(c(yStar, sigmaStar2)) #First K values are for y, others are for sigma
 }
 
-  
 #Makes bootstrap forecasts for y as a B by forecast_length matrix
-make_y_forecast <- function(y, forecast_length, B, block_size){
-  
-  out <- matrix(0, nrow = B, ncol = forecast_length)
-  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
-                             mean.model = list(armaOrder = c(0, 0)))
-  
-  garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
-  estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
-  estimated_conditional_variances<- estimate_conditional_variances(y)
-  residuals <- residual_11(y)
-  
-  for (b in 1:B){
-    seriesStar <- bootRep_11(y, block_size)
-    garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
-    coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
-                   as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
-    out[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
-  }
-  return(out)
-}
-  
-  
+# make_y_forecast <- function(y, forecast_length, B, block_size){
+#   
+#   out <- matrix(0, nrow = B, ncol = forecast_length)
+#   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+#                              mean.model = list(armaOrder = c(0, 0)))
+#   
+#   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
+#   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+#   estimated_conditional_variances<- estimate_conditional_variances(y)
+#   residuals <- residual_11(y)
+#   
+#   for (b in 1:B){
+#     seriesStar <- bootRep_11(y, block_size)
+#     garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
+#     coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
+#                    as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
+#     out[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
+#   }
+#   return(out)
+# }
+
 #Makes bootstrap forecasts for sigma as a B by forecast_length matrix
-make_sigma_forecast <- function(y, forecast_length, B, block_size){
+make_forecast <- function(y, forecast_length, B, block_size){
   
   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                              mean.model = list(armaOrder = c(0, 0)))
   
   
-  out <- matrix(0, nrow = B, ncol = forecast_length)
-  #The estCoeff are constants we could put the calculation in this 
-  #function depends on what you want
+  out_y <- matrix(0, nrow = B, ncol = forecast_length)
+  out_sigma <- matrix(0, nrow = B, ncol = forecast_length)
   
-  estimated_conditional_variances<- estimate_conditional_variances(y)
   
   for (b in 1:B){ #Repeats bootstrap B times
     seriesStar <- bootRep_11(y, block_size)
     garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
     coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
                    as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
-    out[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
+    out_sigma[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
+    out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
   }
-  return(out)
+  # print(out_y)
+  # print("BREAK")
+  # print(out_sigma)
+  return(cbind(out_y, out_sigma))
+}
+
+get_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for y
+  
+  forecast <- make_forecast(y, forecast_length, B, block_size)
+  # print(forecast)
+  forecast_y <- forecast[,1:2]
+  forecast_sigma <- forecast[,3:4]
+  
+  # print(forecast_y)
+  forecast_y[,forecast_length] = sort(forecast_y[,forecast_length])
+  forecast_sigma[,forecast_length] = sort(forecast_sigma[,forecast_length])
+  
+  # print("forecast y is ")
+  # print(forecast_y)
+  
+  lower_y <- quantile(forecast_y[,forecast_length], (alpha/2))
+  lower_sigma <- quantile(forecast_sigma[,forecast_length], (alpha/2))
+  upper_y <- quantile(forecast_y[,forecast_length], (1-(alpha/2)))
+  upper_sigma <- quantile(forecast_sigma[,forecast_length], (1-(alpha/2)))
+  
+  # print(lower_y)
+  # print(upper_y)
+  # print(lower_sigma)
+  # print(upper_sigma)
+  
+  return(cbind(lower_y, upper_y, lower_sigma, upper_sigma))
 }
 
 
-get_y_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for y
-  
-  forecast <- make_y_forecast(y, forecast_length, B, block_size)
-  
-  
-  forecast[,forecast_length] = sort(forecast[,forecast_length])
-  
-  lower <- quantile(forecast[,forecast_length], (alpha/2))
-  upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
-  
-  return(list(lb=lower, ub=upper))
-}
+# get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for simga^2
+#   
+#   forecast <- make_sigma_forecast(y, forecast_length, B, block_size)
+#   
+#   
+#   forecast[,forecast_length] = sort(forecast[,forecast_length])
+#   
+#   lower <- quantile(forecast[,forecast_length], (alpha/2))
+#   upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
+#   
+#   return(list(lb=lower, ub=upper))
+# }
 
-
-get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for simga^2
-  
-  forecast <- make_sigma_forecast(y, forecast_length, B, block_size)
-  
-  
-  forecast[,forecast_length] = sort(forecast[,forecast_length])
-  
-  lower <- quantile(forecast[,forecast_length], (alpha/2))
-  upper <- quantile(forecast[,forecast_length], (1-(alpha/2)))
-  
-  return(list(lb=lower, ub=upper))
-}
-  
-  
-  ##### 3. Obtain the confidence intervals #####
+##### 3. Obtain the confidence intervals #####
 
 
 n = 10000
@@ -331,8 +284,13 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     
     
     
-    series_CI <- get_y_CI(simSeries, forecast_length, B, block_size, alpha)
-    volatility_CI <- get_sigma_CI(simSeries, forecast_length, B, block_size, alpha)
+    CI <- get_CI(simSeries, forecast_length, B, block_size, alpha)
+    # print("CI is ")
+    # print(CI)
+    series_CI <- CI[1:2]
+    volatility_CI <- CI[3:4]
+    # print(series_CI)
+    # print(volatility_CI)
     
     
     ## Step 3: Evaluate ##
@@ -346,7 +304,7 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
   coverage_probability_y <- mean(accept_y)
   coverage_probability_sigma2 <- mean(accept_sigma2)
   
-  return(c(coverage_probability_y,coverage_probability_sigma2))
+  return(c(coverage_probability_y, coverage_probability_sigma2))
 }
 
 
@@ -395,3 +353,4 @@ for (i in 1:length(n.vec)) {											# Start the loop over the sample sizes st
 matplot(n.vec, cbind(1 - alpha, simulation.results), type = "l", lty = 1:6, col = c(1, 3, 2, 4), lwd = 2, xlab = expression(italic(n)), ylab = "Coverage")
 legend.text <- c("Desired Coverage", "Asymptotic", "Iid bootstrap", "Blocl bootstrap")
 legend("bottomright", legend.text, lty = 1:6, col = c(1, 3, 2, 4))
+
