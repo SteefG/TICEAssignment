@@ -3,6 +3,7 @@ rm(list = ls())
 # Load Packages 
 library(bootUR)
 library(rugarch)
+#library(fGarch)
 library(stargazer)
 
 set.seed(123)	
@@ -189,20 +190,12 @@ make_forecast <- function(y, forecast_length, B, block_size){
   
   for (b in 1:B){ #Repeats bootstrap B times
     seriesStar <- bootRep_11(y, block_size)
-    # garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
-    # coeffStar <- c(as.numeric(coef(garchStar_11)[2]),
-    #                as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
+    garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
+    coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
+                   as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
     out_sigma[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
     out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
-
   }
-  # seriesStar <- replicate(B, bootRep_11(y, block_size))
-  
-  # out_sigma[1:B,] <- apply(X = seriesStar, MARGIN = c(1), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[(forecast_length+1):(2*forecast_length)]
-  # out_sigma[1:B,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
-  # out_y[1:B,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
-  # out_y[1:B,] <- apply(X = seriesStar, MARGIN = c(1), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[1:forecast_length]
-  
   # print(out_y)
   # print("BREAK")
   # print(out_sigma)
@@ -237,16 +230,6 @@ get_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast
 }
 
 
-get_asymptotic_CI <- function(y, alpha){
-  
-  lower <- (mean(y)-(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
-  upper <- (mean(y)+(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
-  
-  return(c(lower,upper))
-  
-}
-
-
 # get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for simga^2
 #   
 #   forecast <- make_sigma_forecast(y, forecast_length, B, block_size)
@@ -266,31 +249,31 @@ get_asymptotic_CI <- function(y, alpha){
 n = 1000
 nr.sim = 1
 forecast_length = 5
-block_size = 10
+block_size = 5
 B = 10
 alpha = 0.05
 i=1
-R = 10
+R=10
+
 
 
 monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha,R){
-  coverage_y <- matrix(0, nrow=nr.sim, ncol = 2)  # Matrix to store the average coverage for the returns of each simulation, 1st column is for bootstrap, 2nd is for asymptotic
-  coverage_sigma2 <- matrix(0, nrow=nr.sim, ncol = 2)  # Matrix to store the average coverage for the volatility of each simulation
-  average_above_y_CI <- matrix(0, nrow=nr.sim, ncol = 2)
-  average_above_sigma2_CI <- matrix(0, nrow=nr.sim, ncol = 2)
-  average_below_y_CI <- matrix(0, nrow=nr.sim, ncol = 2)
-  average_below_sigma2_CI <- matrix(0, nrow=nr.sim, ncol = 2)
-  length_y_CI <- matrix(0, nrow=nr.sim, ncol = 2)
-  length_sigma2_CI <- matrix(0, nrow=nr.sim, ncol = 2)
+  coverage_y <- rep(0, times = nr.sim)  # Vector to store acceptances
+  coverage_sigma2 <- rep(0, times = nr.sim)
+  average_above_y_CI <- rep(0, times = nr.sim)
+  average_above_sigma2_CI <- rep(0, times = nr.sim)
+  average_below_y_CI <- rep(0, times = nr.sim)
+  average_below_sigma2_CI <- rep(0, times = nr.sim)
+  length_y_CI <- rep(0, times = nr.sim)
+  length_sigma2_CI <- rep(0, times = nr.sim)
   
   for (i in 1:nr.sim){
-    print(i)
-    accept_y <- matrix(0, nrow=R, ncol = 2)  # Vector to store acceptances
-    accept_sigma2 <- matrix(0, nrow=R, ncol = 2)
-    above_y_CI <- matrix(0, nrow=R, ncol = 2)
-    above_sigma2_CI <- matrix(0, nrow=R, ncol = 2)
-    below_y_CI <- matrix(0, nrow=R, ncol = 2)
-    below_sigma2_CI <- matrix(0, nrow=R, ncol = 2)
+    accept_y <- rep(0, times = R)  # Vector to store acceptances
+    accept_sigma2 <- rep(0, times = R)
+    above_y_CI <- rep(0, times = R)
+    above_sigma2_CI <- rep(0, times = R)
+    below_y_CI <- rep(0, times = R)
+    below_sigma2_CI <- rep(0, times = R)
     
     ## Step 1: Simulate ##
     #simulates n obervations of a GARCH(1,1)
@@ -317,128 +300,82 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     
     
     
-    boot_CI <- get_CI(simSeries, forecast_length, B, block_size, alpha)
+    CI <- get_CI(simSeries, forecast_length, B, block_size, alpha)
     # print("CI is ")
     # print(CI)
-    series_CI <- boot_CI[1:2]
-    volatility_CI <- boot_CI[3:4]
-    asymptotic_series_CI <- get_asymptotic_CI(simSeries, alpha)
-    asymptotic_volatility_CI <- get_asymptotic_CI(simVolatility, alpha)
+    series_CI <- CI[1:2]
+    volatility_CI <- CI[3:4]
     # print(series_CI)
     # print(volatility_CI)
     
-    length_y_CI[i,1] <- series_CI[2]-series_CI[1]
-    length_sigma2_CI[i,1] <- volatility_CI[2]-volatility_CI[1]
-    length_y_CI[i,2] <- asymptotic_series_CI[2]-asymptotic_series_CI[1]
-    length_sigma2_CI[i,2] <- asymptotic_volatility_CI[2]-asymptotic_volatility_CI[1]
+    length_y_CI[i] <- series_CI[2]-series_CI[1]
+    length_sigma2_CI[i] <- volatility_CI[2]-volatility_CI[1]
     
     ## Step 3: Evaluate ##
     for (r in 1:R){
-      #check for bootstrap
-      if (sim_k[r,1] < series_CI[2] && sim_k[r,1] > series_CI[1]) {accept_y[r,1] <- 1}
-      else if (sim_k[r,1] > series_CI[2]) {above_y_CI[r,1] <-1 }
-      else if(sim_k[r,1] < series_CI[1]) {below_y_CI[r,1] <-1 }
-      
-      if (sim_k[r,2] < volatility_CI[2] && sim_k[r,2] > volatility_CI[1]) {accept_sigma2[r,1] <- 1}
-      else if (sim_k[r,2] > volatility_CI[2]) {above_sigma2_CI[r,1] <-1 }
-      else if(sim_k[r,2] < volatility_CI[1]) {below_sigma2_CI[r,1] <-1 }
-      
-      #check for asymptotic
-      if (sim_k[r,1] < asymptotic_series_CI[2] && sim_k[r,1] > asymptotic_series_CI[1]) {accept_y[r,2] <- 1}
-      else if (sim_k[r,1] > asymptotic_series_CI[2]) {above_y_CI[r,2] <-1 }
-      else if(sim_k[r,1] < asymptotic_series_CI[1]) {below_y_CI[r,2] <-1 }
-      
-      if (sim_k[r,2] < asymptotic_volatility_CI[2] && sim_k[r,2] > asymptotic_volatility_CI[1]) {accept_sigma2[r,2] <- 1}
-      else if (sim_k[r,2] > asymptotic_volatility_CI[2]) {above_sigma2_CI[r,2] <-1 }
-      else if(sim_k[r,2] < asymptotic_volatility_CI[1]) {below_sigma2_CI[r,2] <-1 }
-      
+      if (sim_k[r,1] < series_CI[2] && sim_k[r,1] > series_CI[1]) {accept_y[r] <- 1}
+      else if (sim_k[r,1] > series_CI[2]) {above_y_CI[r] <-1 }
+      else if(sim_k[r,1] < series_CI[1]) {below_y_CI[r] <-1 }
+        
+      if (sim_k[r,2] < volatility_CI[2] && sim_k[r,2] > volatility_CI[1]) {accept_sigma2[r] <- 1}
+      else if (sim_k[r,2] > volatility_CI[2]) {above_sigma2_CI[r] <-1 }
+      else if(sim_k[r,2] < volatility_CI[1]) {below_sigma2_CI[r] <-1 }
     }
     
-    coverage_y[i,] <- c(mean(accept_y[,1]),mean(accept_y[,2]))
-    coverage_sigma2[i,] <- c(mean(accept_sigma2[,1]),mean(accept_sigma2[,2]))
-    average_above_y_CI[i,] <- c(mean(above_y_CI[,1]),mean(above_y_CI[,2]))
-    average_above_sigma2_CI[i,] <- c(mean(above_sigma2_CI[,1]),mean(above_sigma2_CI[,2]))
-    average_below_y_CI[i,] <- c(mean(below_y_CI[,1]),mean(below_y_CI[,2]))
-    average_below_sigma2_CI[i,] <- c(mean(below_sigma2_CI[,1]),mean(below_sigma2_CI[,2]))
+    coverage_y[i] <- mean(accept_y)
+    coverage_sigma2[i] <- mean(accept_sigma2)
+    average_above_y_CI[i] <- mean(above_y_CI)
+    average_above_sigma2_CI[i] <- mean(above_sigma2_CI)
+    average_below_y_CI[i] <- mean(below_y_CI)
+    average_below_sigma2_CI[i] <- mean(below_sigma2_CI)
   }
-  print("cov y")
-  print(coverage_y)
-  print("cov y")
-  print(coverage_sigma2)
+  
   ## Step 4: Summarize ##
-  coverage_probability_y <- mean(coverage_y[,1])
-  sd_coverage_y <- sd(coverage_y[,1])
-  average_length_y <- mean(length_y_CI[,1])
-  sd_length_y <- sd(length_y_CI[,1])
-  coverage_probability_sigma2 <- mean(coverage_sigma2[,1])
-  sd_coverage_sigma2 <- sd(coverage_sigma2[,1])
-  average_length_sigma2 <- mean(length_sigma2_CI[,1])
-  sd_length_sigma2 <- sd(length_sigma2_CI[,1])
-  above_y <- mean(average_above_y_CI[,1])
-  below_y <- mean(average_below_y_CI[,1])
-  above_sigma2 <- mean(average_above_sigma2_CI[,1])
-  below_sigma2 <- mean(average_below_sigma2_CI[,1])
-  
-  asymptotic_coverage_probability_y <- mean(coverage_y[,2])
-  asymptotic_sd_coverage_y <- sd(coverage_y[,2])
-  asymptotic_average_length_y <- mean(length_y_CI[,2])
-  asymptotic_sd_length_y <- sd(length_y_CI[,2])
-  asymptotic_coverage_probability_sigma2 <- mean(coverage_sigma2[,2])
-  asymptotic_sd_coverage_sigma2 <- sd(coverage_sigma2[,2])
-  asymptotic_average_length_sigma2 <- mean(length_sigma2_CI[,2])
-  asymptotic_sd_length_sigma2 <- sd(length_sigma2_CI[,2])
-  asymptotic_above_y <- mean(average_above_y_CI[,2])
-  asymptotic_below_y <- mean(average_below_y_CI[,2])
-  asymptotic_above_sigma2 <- mean(average_above_sigma2_CI[,2])
-  asymptotic_below_sigma2 <- mean(average_below_sigma2_CI[,2])
+  coverage_probability_y <- mean(coverage_y)
+  sd_coverage_y <- sd(coverage_y)
+  average_length_y <- mean(length_y_CI)
+  sd_length_y <- sd(length_y_CI)
+  coverage_probability_sigma2 <- mean(coverage_sigma2)
+  sd_coverage_sigma2 <- sd(coverage_sigma2)
+  average_length_sigma2 <- mean(length_sigma2_CI)
+  sd_length_sigma2 <- sd(length_sigma2_CI)
+  above_y <- mean(average_above_y_CI)
+  below_y <- mean(average_below_y_CI)
+  above_sigma2 <- mean(average_above_sigma2_CI)
+  below_sigma2 <- mean(average_below_sigma2_CI)
   
   
-  summary_boot_y <- matrix(c(coverage_probability_y, sd_coverage_y, above_y, below_y, 
+  summary_y <- matrix(c(coverage_probability_y, sd_coverage_y, above_y, below_y, 
                         average_length_y, sd_length_y), nrow = 1, ncol = 6)
-  colnames(summary_boot_y) <- c("Average coverage", "SD", "Av. coverage above", 
+  colnames(summary_y) <- c("Average coverage", "SD", "Av. coverage above", 
                            "Av. coverage below", "Average length", "SD")
   
-  summary_boot_sigma2 <- matrix(c(coverage_probability_sigma2, sd_coverage_sigma2, 
+  summary_sigma2 <- matrix(c(coverage_probability_sigma2, sd_coverage_sigma2, 
                              above_sigma2, below_sigma2, average_length_sigma2, 
                              sd_length_sigma2), nrow = 1, ncol = 6)
   
-  colnames(summary_boot_sigma2) <- c("Average coverage", "SD", "Av. coverage above", 
-                                "Av. coverage below", "Average length", "SD")
+  colnames(summary_sigma2) <- c("Average coverage", "SD", "Av. coverage above", 
+                           "Av. coverage below", "Average length", "SD")
   
-  
-  
-  summary_asymptotic_y <- matrix(c(asymptotic_coverage_probability_y, 
-                                   asymptotic_sd_coverage_y, asymptotic_above_y, 
-                                   asymptotic_below_y, 
-                                   asymptotic_average_length_y, 
-                                   asymptotic_sd_length_y), nrow = 1, ncol = 6)
-  colnames(summary_asymptotic_y) <- c("Average coverage", "SD", "Av. coverage above", 
-                                "Av. coverage below", "Average length", "SD")
-  
-  summary_asymptotic_sigma2 <- matrix(c(asymptotic_coverage_probability_sigma2, 
-                                        asymptotic_sd_coverage_sigma2, 
-                                        asymptotic_above_sigma2, asymptotic_below_sigma2, 
-                                        asymptotic_average_length_sigma2, 
-                                        asymptotic_sd_length_sigma2), nrow = 1, ncol = 6)
-  
-  colnames(summary_asymptotic_sigma2) <- c("Average coverage", "SD", "Av. coverage above", 
-                                     "Av. coverage below", "Average length", "SD")
-  
-  return(rbind.data.frame(summary_boot_y, summary_boot_sigma2, 
-                          summary_asymptotic_y, summary_asymptotic_sigma2))
+  return(rbind.data.frame(summary_y, summary_sigma2))
 }
 
 
-result <- monte_carlo_simulation(100,3,2,5,100,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
+result <- monte_carlo_simulation(1000,2,5,10,10,0.05,10)
+#function(n, nr.sim, forecast_length, block_size, B, alpha,R)
 
+stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
+          column.labels = c("Average coverage", "SD", "Av. coverage above", 
+                            "Av. coverage below", "Average length", "SD"))
 
-#stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
-          #column.labels = c("Average coverage", "SD", "Av. coverage above", 
-                            #"Av. coverage below", "Average length", "SD"))
-
-
-
-
+get_asymptotic_CI <- function(y, alpha){
+  
+  lower <- (mean(y)-(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  upper <- (mean(y)+(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  
+  return(list(lb=lower, ub=upper))
+  
+}
 
 
 
