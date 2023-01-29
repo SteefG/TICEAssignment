@@ -250,7 +250,7 @@ get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth fo
   return(c(lb=lower, ub=upper))
 }
 
-get_y_CI(simSeries, 5, 100, 10, 0.05)
+get_y_CI(simSeries, 5, 499, 10, 0.05)
 get_sigma_CI(simSeries, 5, 10, 10, 0.05)
 
 
