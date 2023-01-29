@@ -189,12 +189,20 @@ make_forecast <- function(y, forecast_length, B, block_size){
   
   for (b in 1:B){ #Repeats bootstrap B times
     seriesStar <- bootRep_11(y, block_size)
-    garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
-    coeffStar <- c(as.numeric(coef(garchStar_11)[2]), 
-                   as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
+    # garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
+    # coeffStar <- c(as.numeric(coef(garchStar_11)[2]),
+    #                as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
     out_sigma[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
     out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
+
   }
+  # seriesStar <- replicate(B, bootRep_11(y, block_size))
+  
+  # out_sigma[1:B,] <- apply(X = seriesStar, MARGIN = c(1), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[(forecast_length+1):(2*forecast_length)]
+  # out_sigma[1:B,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
+  # out_y[1:B,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
+  # out_y[1:B,] <- apply(X = seriesStar, MARGIN = c(1), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[1:forecast_length]
+  
   # print(out_y)
   # print("BREAK")
   # print(out_sigma)
@@ -205,8 +213,8 @@ get_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast
   
   forecast <- make_forecast(y, forecast_length, B, block_size)
   # print(forecast)
-  forecast_y <- forecast[,1:2]
-  forecast_sigma <- forecast[,3:4]
+  forecast_y <- forecast[,1:forecast_length]
+  forecast_sigma <- forecast[,(forecast_length + 1):(2*forecast_length)]
   
   # print(forecast_y)
   forecast_y[,forecast_length] = sort(forecast_y[,forecast_length])
@@ -245,7 +253,7 @@ get_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast
 ##### 3. Obtain the confidence intervals #####
 
 
-n = 10000
+n = 1000
 nr.sim = 1
 forecast_length = 5
 block_size = 5
@@ -262,10 +270,12 @@ check_interval <- function(interval, forecast_k) {
 
 
 monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha){
+  
   accept_y <- rep(0, times = nr.sim)  # Vector to store acceptances
   accept_sigma2 <- rep(0, times = nr.sim)
   
   for (i in 1:nr.sim){
+    print(i)
     ## Step 1: Simulate ##
     sim <- GARCH11(w = 0.05, a = 0.1, b = 0.85, (n+forecast_length))
     simSeries_k <- sim[n+forecast_length,1] #Obtain the quantity of interest (n+kth oberservation)
@@ -273,7 +283,6 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     simSeries <- head(sim[,1],-forecast_length)
     # print(c(simSeries_k,simVolatility_k))
     # print("This was in the MONTE")
-    
     
     
     ## Step 2: Apply ##
@@ -308,7 +317,7 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
 }
 
 
-monte_carlo_simulation(100,3,2,5,10,0.05)
+monte_carlo_simulation(100,3,2,5,100,0.05)
 
 
 get_asymptotic_CI <- function(y, alpha){
