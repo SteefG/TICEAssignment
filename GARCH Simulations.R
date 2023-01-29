@@ -41,13 +41,13 @@ GARCH11 <- function(w, a, b, n) {
 }
 
 # Generating Simulated Series 
-sim <- GARCH11(w = 0.1, a = 0.5, b = 0.1, n = 1000)
+sim <- GARCH11(w = 0.1, a = 0.5, b = 0.1, n = 10000)
 simSeries <- sim[,1]
 simVolatility <- sim[,2]
 
 # PLotting Simulated Series
-plot.ts(simSeries)
-plot.ts(simVolatility)
+#plot.ts(simSeries)
+#plot.ts(simVolatility)
 
 
 ##### 1. Estimate the parameters #####
@@ -81,13 +81,13 @@ estimate_conditional_variances <- function(y){
   
   
   for (i in 2:length(y)){
-    sigmaHat2[i] <- estCoeff_11[1] + estCoeff_11[2]*(y[i-1])^2 + estCoeff_11[3]*(sigmaHat2[i-1])^2
+    sigmaHat2[i] <- estCoeff_11[1] + estCoeff_11[2]*(y[i-1])^2 + estCoeff_11[3]*(sigmaHat2[i-1])
   }
   
   return(sigmaHat2)
 }
 
-estimated_conditional_variances <- estimate_conditional_variances(simSeries)
+estimated_conditional_variances <- estimate_conditional_variances(simSeries) ##### doesn't need to be run
 
 #residuals
 residual_11 <- function(y){
@@ -115,10 +115,11 @@ bootRep_11 <- function(y, block_size){
   
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+  ##### Why are those in the function? 
   sigmaHat2 <- estimate_conditional_variances(y)
   residuals <- residual_11(y)
   
-  sigmaStar2 <- rep(0, length(y))
+  sigmaStar2 <- rep(0, length(y)) ##### Change variable name cuz a bit confusing
   sigmaStar2[1] <- sigmaHat2[1]
   
   yStar <- rep(0, length(y))
@@ -128,7 +129,7 @@ bootRep_11 <- function(y, block_size){
 
   
   for (i in 2:length(y)){
-    sigmaStar2[i] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[i-1])^2 + estCoeff_11[3]*(sigmaStar2[i-1])^2
+    sigmaStar2[i] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[i-1])^2 + estCoeff_11[3]*(sigmaStar2[i-1])
     yStar[i] <- eStar[i]*sqrt(sigmaStar2)[i]
   }
 
@@ -166,7 +167,7 @@ bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is
   yStar[1] <- eStar[1]*sqrt(sigmaStar2)[1]
   
   for (k in 2:forecast_length){
-    sigmaStar2[k] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[k-1])^2 + estCoeff_11[3]*(sigmaStar2[k-1])^2
+    sigmaStar2[k] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[k-1])^2 + estCoeff_11[3]*(sigmaStar2[k-1])
     yStar[k] <- eStar[k]*sqrt(sigmaStar2)[k]
   }
   return(c(yStar, sigmaStar2)) #First K values are for y, others are for sigma
@@ -249,7 +250,7 @@ get_sigma_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth fo
   return(c(lb=lower, ub=upper))
 }
 
-get_y_CI(simSeries, 5, 10, 10, 0.05)
+get_y_CI(simSeries, 5, 100, 10, 0.05)
 get_sigma_CI(simSeries, 5, 10, 10, 0.05)
 
 
