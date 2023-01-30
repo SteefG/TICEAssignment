@@ -227,10 +227,15 @@ get_CI <- function(y, forecast_length, B, block_size, alpha, theta){ #gets Kth f
 }
 
 
-get_asymptotic_CI <- function(y, alpha){
+get_asymptotic_CI <- function(simSeries, alpha, estimated_coefficients, forecast_length, simVolatility){
   
-  lower <- (mean(y)-(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
-  upper <- (mean(y)+(qnorm((1-(alpha/2)))*(sqrt(var(y))/sqrt(length(y)))))
+  a <- estimated_coefficients[1]
+  b <- estimated_coefficients[2]
+  w <- estimated_coefficients[3]
+  n <- length(simSeries)
+  expect_sigma2T1 <- (w/(1-a-b)) + ((a + b)^(forecast_length) * (w+a*simSeries[n]^2+b*simVolatility[n]))
+  lower <- -1*qnorm(0.025)*expect_sigma2T1
+  upper <- qnorm(0.025)*expect_sigma2T1
   
   return(c(lower,upper))
   
@@ -312,15 +317,14 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     # print(CI)
     series_CI <- boot_CI[1:2]
     volatility_CI <- boot_CI[3:4]
-    asymptotic_series_CI <- get_asymptotic_CI(simSeries, alpha)
-    asymptotic_volatility_CI <- get_asymptotic_CI(simVolatility, alpha)
+    asymptotic_series_CI <- get_asymptotic_CI(simSeries, alpha, estimated_coefficients, forecast_length, simVolatility)
     # print(series_CI)
     # print(volatility_CI)
     
     length_y_CI[i,1] <- series_CI[2]-series_CI[1]
     length_sigma2_CI[i,1] <- volatility_CI[2]-volatility_CI[1]
     length_y_CI[i,2] <- asymptotic_series_CI[2]-asymptotic_series_CI[1]
-    length_sigma2_CI[i,2] <- asymptotic_volatility_CI[2]-asymptotic_volatility_CI[1]
+#    length_sigma2_CI[i,2] <- asymptotic_volatility_CI[2]-asymptotic_volatility_CI[1]
     
     ## Step 3: Evaluate ##
     for (r in 1:R){
@@ -338,9 +342,9 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
       else if (sim_k[r,1] > asymptotic_series_CI[2]) {above_y_CI[r,2] <-1 }
       else if(sim_k[r,1] < asymptotic_series_CI[1]) {below_y_CI[r,2] <-1 }
       
-      if (sim_k[r,2] < asymptotic_volatility_CI[2] && sim_k[r,2] > asymptotic_volatility_CI[1]) {accept_sigma2[r,2] <- 1}
-      else if (sim_k[r,2] > asymptotic_volatility_CI[2]) {above_sigma2_CI[r,2] <-1 }
-      else if(sim_k[r,2] < asymptotic_volatility_CI[1]) {below_sigma2_CI[r,2] <-1 }
+#      if (sim_k[r,2] < asymptotic_volatility_CI[2] && sim_k[r,2] > asymptotic_volatility_CI[1]) {accept_sigma2[r,2] <- 1}
+#      else if (sim_k[r,2] > asymptotic_volatility_CI[2]) {above_sigma2_CI[r,2] <-1 }
+#      else if(sim_k[r,2] < asymptotic_volatility_CI[1]) {below_sigma2_CI[r,2] <-1 }
       
     }
     
@@ -415,7 +419,7 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
 }
 
 
-result <- monte_carlo_simulation(1000,1,5,10,10,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
+result <- monte_carlo_simulation(1000,25,5,10,10,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
 
 #stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
           #column.labels = c("Average coverage", "SD", "Av. coverage above", 
@@ -438,13 +442,12 @@ for (i in 1:length(n.vec)) {											# Start the loop over the sample sizes st
     simSeries <- head(sim[,1],-forecast_length)
     
     
-    asymptotic_volatility_CI <- get_asymptotic_CI(simSeries,alpha)					# Construct an asymptotic (1-alpha) confidence interval for the mean
-    asymptotic_volatility_CI <- get_asymptotic_CI(simVolatility,alpha)
+    asymptotic_series_CI <- get_asymptotic_CI(simSeries, alpha, estimated_coefficients, forecast_length, simVolatility)					# Construct an asymptotic (1-alpha) confidence interval for the mean
     #iid_boot__CI <- iid_bootstrap.interval(x, alpha, B)		# Construct an equal-tailed (1-alpha) percentile-t confidence interval for the mean using the iid bootstrap
     #iid_boot_CI <- parametric.bootstrap.interval(x, alpha, B)	# Construct an equal-tailed (1-alpha) percentile-t confidence interval for the mean using the parametric bootstrap
     
     
-    coverage[s,1] <- check.interval(asymptotic_volatility_CI,alpha)				# Check if the mean beta is contained in the asymptotic confidence interval (1 if yes, 0 if no)
+    coverage[s,1] <- check.interval(asymptotic_series_CI,alpha)				# Check if the mean beta is contained in the asymptotic confidence interval (1 if yes, 0 if no)
     #coverage[s,2] <- check.interval(iid.boot.conf.int, beta)		# Check if the mean beta is contained in the iid bootstrap confidence interval (1 if yes, 0 if no)
     #coverage[s,3] <- check.interval(par.boot.conf.int, beta)		# Check if the mean beta is contained in the parametric bootstrap confidence interval (1 if yes, 0 if no)
   }
