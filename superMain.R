@@ -43,8 +43,7 @@ block_sampler <- function(x, n, block_size) {
 
 ##### GARCH(1,1) simulation #####
 GARCH11 <- function(w, a, b, n, starting_sigma2) {
-  ### Takes as input parameters, w, a, b and n signifying the parameters of a GARCH(1,1) and simulates a GARCH series 
-  ### of length n.
+  ### Takes as input parameters, w, a, b and n signifying the parameters of a GARCH(1,1) and simulates a GARCH series of length n.
   
   sigma2 <- rep(0, n) #Initialises the sigma^2 vector
   sigma2[1] <- starting_sigma2 #Randomly set the first value to 1
@@ -116,6 +115,7 @@ bootRep_11 <- function(y, block_size, theta){
 
 
 bootForecast_11 <- function(y, forecast_length, block_size, theta){ #forecast_length is the forecasting horizon
+  
   
   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                              mean.model = list(armaOrder = c(0, 0)))
