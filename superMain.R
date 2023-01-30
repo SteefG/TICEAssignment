@@ -196,12 +196,12 @@ make_forecast <- function(y, forecast_length, B, block_size){
     out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
 
   }
-  # seriesStar <- replicate(B, bootRep_11(y, block_size))
   
-  # out_sigma[1:B,] <- apply(X = seriesStar, MARGIN = c(1), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[(forecast_length+1):(2*forecast_length)]
-  # out_sigma[1:B,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
-  # out_y[1:B,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
-  # out_y[1:B,] <- apply(X = seriesStar, MARGIN = c(1), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[1:forecast_length]
+  # seriesStar <- replicate(B, bootRep_11(y, block_size))
+  # # print(seriesStar)
+  # 
+  # out_sigma[1:B,] <- apply(X = seriesStar, MARGIN = c(2), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[(forecast_length+1):(2*forecast_length)]
+  # out_y[1:B,] <- apply(X = seriesStar, MARGIN = c(2), FUN = bootForecast_11, forecast_length = forecast_length, block_size = block_size)[1:forecast_length]
   
   # print(out_y)
   # print("BREAK")
@@ -435,8 +435,6 @@ result <- monte_carlo_simulation(100,3,2,5,100,0.05,100)  #two first rows are th
 #stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
           #column.labels = c("Average coverage", "SD", "Av. coverage above", 
                             #"Av. coverage below", "Average length", "SD"))
-
-
 
 
 
