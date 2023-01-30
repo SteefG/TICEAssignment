@@ -40,13 +40,14 @@ block_sampler <- function(x, n, k) {
   return(unlist(out))
 }
 
+
 ##### GARCH(1,1) simulation #####
-GARCH11 <- function(w, a, b, n, starting_sigma) {
+GARCH11 <- function(w, a, b, n, starting_sigma2) {
   ### Takes as input parameters, w, a, b and n signifying the parameters of a GARCH(1,1) and simulates a GARCH series 
   ### of length n.
   
   sigma2 <- rep(0, n) #Initialises the sigma^2 vector
-  sigma2[1] <- starting_sigma #Randomly set the first value to 1
+  sigma2[1] <- starting_sigma2 #Randomly set the first value to 1
   
   epsilon <- rnorm(n, mean=0, sd = 1) #Generates white noise process with unit variance
   
@@ -58,9 +59,7 @@ GARCH11 <- function(w, a, b, n, starting_sigma) {
     y[i] <- sqrt(sigma2[i])*epsilon[i]
   }
   
-  y_vec <- matrix(y, nrow = n, ncol = 1)
-  sigma2_vec <- matrix(sigma2, nrow = n, ncol = 1)
-  garch11 <- cbind(y_vec, sigma2_vec)
+  garch11 <- cbind(y, sigma2)
   colnames(garch11) <- c("y","sigma^2")
   
   return(garch11)
@@ -73,10 +72,10 @@ estimate_conditional_variances <- function(y){
   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                              mean.model = list(armaOrder = c(0, 0)))
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
-  estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+  estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])  #Vector containing the estimated parameters: (omega, alpha, beta)
   
   sigmaHat2 <- rep(0,length(y))
-  sigmaHat2[1] <- estCoeff_11[1]/(1-estCoeff_11[2]-estCoeff_11[3]) #marginal variance
+  sigmaHat2[1] <- estCoeff_11[1]/(1-estCoeff_11[2]-estCoeff_11[3])  #Estimated marginal variance
   
   
   for (i in 2:length(y)){
@@ -96,7 +95,7 @@ residual_11 <- function(y){
 }
 
 bootRep_11 <- function(y, block_size){
-  ### Takes as input the series y and block size block_size and outputs a bootstrapped ystar vector
+  ### Takes as input the series y and block size block_size and outputs a bootstrapped ystar vector (bootstrap replicates)
   
   
   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
@@ -361,10 +360,6 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     average_below_y_CI[i,] <- c(mean(below_y_CI[,1]),mean(below_y_CI[,2]))
     average_below_sigma2_CI[i,] <- c(mean(below_sigma2_CI[,1]),mean(below_sigma2_CI[,2]))
   }
-  print("cov y")
-  print(coverage_y)
-  print("cov y")
-  print(coverage_sigma2)
   ## Step 4: Summarize ##
   coverage_probability_y <- mean(coverage_y[,1])
   sd_coverage_y <- sd(coverage_y[,1])
