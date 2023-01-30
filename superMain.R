@@ -234,8 +234,8 @@ get_asymptotic_CI <- function(simSeries, alpha, estimated_coefficients, forecast
   w <- estimated_coefficients[3]
   n <- length(simSeries)
   expect_sigma2T1 <- (w/(1-a-b)) + ((a + b)^(forecast_length) * (w+a*simSeries[n]^2+b*simVolatility[n]))
-  lower <- -1*qnorm(0.025)*expect_sigma2T1
-  upper <- qnorm(0.025)*expect_sigma2T1
+  lower <- qnorm(0.025)*expect_sigma2T1
+  upper <- -1*qnorm(0.025)*expect_sigma2T1
   
   return(c(lower,upper))
   
@@ -419,23 +419,17 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
 }
 
 start_time <- Sys.time()
-result <- monte_carlo_simulation(1000, 25, 5, 1, 49, 0.05, 100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
+result <- monte_carlo_simulation(100, 5, 5, 1, 49, 0.05, 100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
 end_time <- Sys.time()
 print(end_time - start_time)
 result
 
-<<<<<<< HEAD
-result <- monte_carlo_simulation(1000,25,5,10,10,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
-=======
->>>>>>> 1e74baf73b58aeb4666b28c742d3f65ead3736a3
+
+result <- monte_carlo_simulation(100,5,5,10,49,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
 
 #stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
           #column.labels = c("Average coverage", "SD", "Av. coverage above", 
                             #"Av. coverage below", "Average length", "SD"))
-
-
-
-
 
 #Coverage plot
 n.vec <- 10*1:10														# Choose the sample sizes to run the simulation over
