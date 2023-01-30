@@ -125,7 +125,7 @@ bootForecast_11 <- function(y, forecast_length, block_size, theta){ #forecast_le
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
   residuals <- residual_11(y, theta)
   
-  sigmaStar2 <- rep(0, (forecast_length+1))
+  sigmaStar2 <- rep(0, forecast_length)
   sum <- 0
   
   for (i in 0:(length(y)-2)){
@@ -133,15 +133,15 @@ bootForecast_11 <- function(y, forecast_length, block_size, theta){ #forecast_le
   }
   
   sigmaStar2[1] <- (estCoeff_11[1]/(1-estCoeff_11[2]-estCoeff_11[3])) + estCoeff_11[2]*sum
-  yStar <- rep(0, (forecast_length+1))
-  eStar <- block_sampler(residuals, (forecast_length+1), block_size) #e sampled from EDF of residuals with replacement
-  yStar[1] <- y[length(y)]
+  yStar <- rep(0, forecast_length)
+  eStar <- block_sampler(residuals, forecast_length, block_size) #e sampled from EDF of residuals with replacement
+  yStar[1] <- eStar[1]*sqrt(sigmaStar2[1])
   
-  for (k in 2:(forecast_length+1)){
+  for (k in 2:forecast_length){
     sigmaStar2[k] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[k-1])^2 + estCoeff_11[3]*(sigmaStar2[k-1])
     yStar[k] <- eStar[k]*sqrt(sigmaStar2[k])
   }
-  return(c(yStar[2:(forecast_length+1)], sigmaStar2[2:(forecast_length+1)])) #First K values are for y, others are for sigma
+  return(c(yStar, sigmaStar2)) #First K values are for y, others are for sigma
 }
 
 #Makes bootstrap forecasts for y as a B by forecast_length matrix
@@ -182,9 +182,9 @@ make_forecast <- function(y, forecast_length, B, block_size, theta){
     # garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
     # coeffStar <- c(as.numeric(coef(garchStar_11)[2]),
     #                as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
-    forecast_variable <-  bootForecast_11(seriesStar, forecast_length, block_size, theta)
-    out_sigma[b,] <- forecast_variable[(forecast_length+1):(2*forecast_length)]
-    out_y[b,] <- forecast_variable[1:forecast_length]
+    out_sigma[b,] <- bootForecast_11(seriesStar, forecast_length, block_size, theta)[(forecast_length+1):(2*forecast_length)]
+    out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size, theta)[1:forecast_length]
+
   }
   
   # seriesStar <- replicate(B, bootRep_11(y, block_size))
@@ -268,7 +268,7 @@ get_asymptotic_CI <- function(simSeries, alpha, estimated_coefficients, forecast
 #R = 10
 
 
-monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha,R){
+monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha, R){
   coverage_y <- matrix(0, nrow=nr.sim, ncol = 2)  # Matrix to store the average coverage for the returns of each simulation, 1st column is for bootstrap, 2nd is for asymptotic
   coverage_sigma2 <- matrix(0, nrow=nr.sim, ncol = 2)  # Matrix to store the average coverage for the volatility of each simulation
   average_above_y_CI <- matrix(0, nrow=nr.sim, ncol = 2)
@@ -418,8 +418,16 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
                           summary_asymptotic_y, summary_asymptotic_sigma2))
 }
 
+start_time <- Sys.time()
+result <- monte_carlo_simulation(1000, 25, 5, 1, 49, 0.05, 100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
+end_time <- Sys.time()
+print(end_time - start_time)
+result
 
+<<<<<<< HEAD
 result <- monte_carlo_simulation(1000,25,5,10,10,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
+=======
+>>>>>>> 1e74baf73b58aeb4666b28c742d3f65ead3736a3
 
 #stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
           #column.labels = c("Average coverage", "SD", "Av. coverage above", 
