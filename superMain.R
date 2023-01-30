@@ -66,48 +66,37 @@ GARCH11 <- function(w, a, b, n, starting_sigma2) {
 }
 
 #estimated conditional variances
-estimate_conditional_variances <- function(y){
+estimate_conditional_variances <- function(y, theta){
   ### Takes as input, series y that is a GARCH(1,1) and outputs a vector of estimated conditional variances
   
-  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
-                             mean.model = list(armaOrder = c(0, 0)))
-  garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
-  estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])  #Vector containing the estimated parameters: (omega, alpha, beta)
-  
   sigmaHat2 <- rep(0,length(y))
-  sigmaHat2[1] <- estCoeff_11[1]/(1-estCoeff_11[2]-estCoeff_11[3])  #Estimated marginal variance
+  sigmaHat2[1] <- theta[1]/(1-theta[2]-theta[3])  #Estimated marginal variance
   
   
   for (i in 2:length(y)){
-    sigmaHat2[i] <- estCoeff_11[1] + estCoeff_11[2]*(y[i-1])^2 + estCoeff_11[3]*(sigmaHat2[i-1])
+    sigmaHat2[i] <- theta[1] + theta[2]*(y[i-1])^2 + theta[3]*(sigmaHat2[i-1])
   }
   
   return(sigmaHat2)
   
 }
 
-residual_11 <- function(y){
+residual_11 <- function(y, theta){
   ### Takes as input a series y and outputs the residuals after fitting a GARCH(1,1)
   
-  sigmaHat2 <- estimate_conditional_variances(y)
+  sigmaHat2 <- estimate_conditional_variances(y, theta)
   resids <- y[1:length(y)]/sqrt(sigmaHat2[1:length(y)])
   return(resids)
 }
 
-bootRep_11 <- function(y, block_size){
+
+bootRep_11 <- function(y, block_size, theta){
   ### Takes as input the series y and block size block_size and outputs a bootstrapped ystar vector (bootstrap replicates)
   
+  sigmaHat2 <- estimate_conditional_variances(y, theta)
+  residuals <- residual_11(y, theta)
   
-  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
-                             mean.model = list(armaOrder = c(0, 0)))
-  
-  garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
-  estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
-  ##### Why are those in the function? 
-  sigmaHat2 <- estimate_conditional_variances(y)
-  residuals <- residual_11(y)
-  
-  sigmaStar2 <- rep(0, length(y)) ##### Change variable name cuz a bit confusing
+  sigmaStar2 <- rep(0, length(y)) 
   sigmaStar2[1] <- sigmaHat2[1]
   
   yStar <- rep(0, length(y))
@@ -117,14 +106,16 @@ bootRep_11 <- function(y, block_size){
   
   
   for (i in 2:length(y)){
-    sigmaStar2[i] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[i-1])^2 + estCoeff_11[3]*(sigmaStar2[i-1])
-    yStar[i] <- eStar[i]*sqrt(sigmaStar2)[i]
+    sigmaStar2[i] <- theta[1] + theta[2]*(yStar[i-1])^2 + theta[3]*(sigmaStar2[i-1])
+    yStar[i] <- eStar[i]*sqrt(sigmaStar2[i])
   }
   
   return(yStar)
 }
 
-bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is the forecasting horizon
+
+
+bootForecast_11 <- function(y, forecast_length, block_size, theta){ #forecast_length is the forecasting horizon
   
   garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
                              mean.model = list(armaOrder = c(0, 0)))
@@ -132,7 +123,7 @@ bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is
   
   garchFit_11 <- ugarchfit(spec = garchSpec_11, data = y)
   estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
-  residuals <- residual_11(y)
+  residuals <- residual_11(y, theta)
   
   sigmaStar2 <- rep(0, forecast_length)
   sum <- 0
@@ -144,11 +135,11 @@ bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is
   sigmaStar2[1] <- (estCoeff_11[1]/(1-estCoeff_11[2]-estCoeff_11[3])) + estCoeff_11[2]*sum
   yStar <- rep(0, forecast_length)
   eStar <- block_sampler(residuals, forecast_length, block_size) #e sampled from EDF of residuals with replacement
-  yStar[1] <- eStar[1]*sqrt(sigmaStar2)[1]
+  yStar[1] <- eStar[1]*sqrt(sigmaStar2[1])
   
   for (k in 2:forecast_length){
     sigmaStar2[k] <- estCoeff_11[1] + estCoeff_11[2]*(yStar[k-1])^2 + estCoeff_11[3]*(sigmaStar2[k-1])
-    yStar[k] <- eStar[k]*sqrt(sigmaStar2)[k]
+    yStar[k] <- eStar[k]*sqrt(sigmaStar2[k])
   }
   return(c(yStar, sigmaStar2)) #First K values are for y, others are for sigma
 }
@@ -176,10 +167,10 @@ bootForecast_11 <- function(y, forecast_length, block_size){ #forecast_length is
 # }
 
 #Makes bootstrap forecasts for sigma as a B by forecast_length matrix
-make_forecast <- function(y, forecast_length, B, block_size){
+make_forecast <- function(y, forecast_length, B, block_size, theta){
   
-  garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
-                             mean.model = list(armaOrder = c(0, 0)))
+  #garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), 
+                             #mean.model = list(armaOrder = c(0, 0)))
   
   
   out_y <- matrix(0, nrow = B, ncol = forecast_length)
@@ -187,12 +178,12 @@ make_forecast <- function(y, forecast_length, B, block_size){
   
   
   for (b in 1:B){ #Repeats bootstrap B times
-    seriesStar <- bootRep_11(y, block_size)
+    seriesStar <- bootRep_11(y, block_size, theta)
     # garchStar_11 <- ugarchfit(spec = garchSpec_11, data = seriesStar)
     # coeffStar <- c(as.numeric(coef(garchStar_11)[2]),
     #                as.numeric(coef(garchStar_11)[3]), as.numeric(coef(garchStar_11)[4]))
-    out_sigma[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[(forecast_length+1):(2*forecast_length)]
-    out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size)[1:forecast_length]
+    out_sigma[b,] <- bootForecast_11(seriesStar, forecast_length, block_size, theta)[(forecast_length+1):(2*forecast_length)]
+    out_y[b,] <- bootForecast_11(seriesStar, forecast_length, block_size, theta)[1:forecast_length]
 
   }
   
@@ -208,9 +199,9 @@ make_forecast <- function(y, forecast_length, B, block_size){
   return(cbind(out_y, out_sigma))
 }
 
-get_CI <- function(y, forecast_length, B, block_size, alpha){ #gets Kth forecast CI for y
+get_CI <- function(y, forecast_length, B, block_size, alpha, theta){ #gets Kth forecast CI for y
   
-  forecast <- make_forecast(y, forecast_length, B, block_size)
+  forecast <- make_forecast(y, forecast_length, B, block_size, theta)
   # print(forecast)
   forecast_y <- forecast[,1:forecast_length]
   forecast_sigma <- forecast[,(forecast_length + 1):(2*forecast_length)]
@@ -262,14 +253,14 @@ get_asymptotic_CI <- function(y, alpha){
 ##### 3. Obtain the confidence intervals #####
 
 
-n = 1000
-nr.sim = 1
-forecast_length = 5
-block_size = 10
-B = 10
-alpha = 0.05
-i=1
-R = 10
+#n = 1000
+#nr.sim = 1
+#forecast_length = 5
+#block_size = 10
+#B = 10
+#alpha = 0.05
+#i=1
+#R = 10
 
 
 monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, alpha,R){
@@ -312,11 +303,11 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
     ##### 1. Estimate the parameters #####
     garchSpec_11 <- ugarchspec(variance.model = list(garchOrder = c(1, 1)), mean.model = list(armaOrder = c(0, 0)))
     garchFit_11 <- ugarchfit(spec = garchSpec_11, data = simSeries)
-    estCoeff_11 <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
+    estimated_coefficients <- c(coef(garchFit_11)[2], coef(garchFit_11)[3], coef(garchFit_11)[4])
     
     
     
-    boot_CI <- get_CI(simSeries, forecast_length, B, block_size, alpha)
+    boot_CI <- get_CI(simSeries, forecast_length, B, block_size, alpha, estimated_coefficients)
     # print("CI is ")
     # print(CI)
     series_CI <- boot_CI[1:2]
@@ -424,8 +415,7 @@ monte_carlo_simulation <- function(n, nr.sim, forecast_length, block_size, B, al
 }
 
 
-result <- monte_carlo_simulation(100,3,2,5,100,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
-
+result <- monte_carlo_simulation(1000,13,5,10,59,0.05,100)  #two first rows are the result for the bootstrap, the last two rows for the asymptotic
 
 #stargazer(result, type = "latex", title = "Summary table", summary = FALSE,
           #column.labels = c("Average coverage", "SD", "Av. coverage above", 
