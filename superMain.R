@@ -12,32 +12,32 @@ SameElements <- function(a, b) return(identical(sort(a), sort(b)))
 
 
 # Performs a Block Bootstrap Sample, returns a n length vector
-block_sampler <- function(x, n, k) {
-  ### Takes parameters, x - series, n - bootstrap sample size and block length k.
+block_sampler <- function(x, n, block_size) {
+  ### Takes parameters, x - series, n - bootstrap sample size and block length block_size and outputs a vector Bootstrap samples of length n
   
-  n_b <- ceiling(n/k) #Number of blocks in sample
-  out <- list()
-  start_indices <- floor(runif(n_b, min = 1, max = length(x)-k+2)) 
+  number_blocks <- ceiling(n/block_size) #Number of blocks in sample
+  block_bootsrap_sample <- list()
+  start_indices <- floor(runif(number_blocks, min = 1, max = length(x)-block_size+2)) 
   
-  for(i in 1:n_b){
+  for(i in 1:number_blocks){
     start <- start_indices[i]
-    length_list <- length(out)
-    if (length_list + k > n){ #Cuts off the last block
-      out <- append(out, x[start:(start+n-length_list-1)])
-      return(unlist(out))
+    length_list <- length(block_bootsrap_sample)
+    if (length_list + block_size > n){ #Cuts off the last block
+      block_bootsrap_sample <- append(block_bootsrap_sample, x[start:(start+n-length_list-1)])
+      return(unlist(block_bootsrap_sample))
     }
     
     else if (length_list == n){ #As a fail-safe
-      return(unlist(out))
+      return(unlist(block_bootsrap_sample))
     }
     
     else { #Adds block to list
-      test <- x[start:(start+k-1)]
-      out <- append(out, x[start:(start+k-1)])
+      test <- x[start:(start+block_size-1)]
+      block_bootsrap_sample <- append(block_bootsrap_sample, x[start:(start+block_size-1)])
     }
   }
   
-  return(unlist(out))
+  return(unlist(block_bootsrap_sample))
 }
 
 
