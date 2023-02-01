@@ -3,7 +3,7 @@ rm(list = ls())
 # Load Packages 
 library(rugarch)
 
-set.seed(123)	
+set.seed(1)	
 
 
 
@@ -81,7 +81,7 @@ estimate_conditional_variances <- function(y, theta){
   
   for (i in 2:length(y)){ 
     # Estimates the GARCH volatility using the estimated coefficients
-    sigmaHat2[i] <- theta[1] + theta[2]*(y[i-1]^2) + theta[3]*(sigmaHat2[i-1]) 
+    sigmaHat2[i] <- theta[1] + theta[2]*(y[i-1])^2 + theta[3]*(sigmaHat2[i-1]) 
   }
   
   return(sigmaHat2)
@@ -135,6 +135,7 @@ boot_replicates <- function(y, block_size, theta){
     
     sigmaStar2[i] <- theta[1] + theta[2]*(yStar[i-1]^2) + 
       theta[3]*(sigmaStar2[i-1])
+    
     yStar[i] <- eStar[i]*sqrt(sigmaStar2[i])
   }
   
@@ -157,8 +158,7 @@ boot_forecast <- function(y, forecast_length, block_size, theta){
   garch_fit <- ugarchfit(spec = garch_specifications, data = y) 
   # Fits the simple GARCH(1,1) to the series y
   
-  estimated_coef <- c(coef(garch_fit)[2], coef(garch_fit)[3], 
-                              coef(garch_fit)[4])
+  estimated_coef <- c(coef(garch_fit)[2], coef(garch_fit)[3], coef(garch_fit)[4])
   # Extracts the estimated coefficients w,a,b
   
   e <- residuals(y, theta) 
@@ -179,22 +179,23 @@ boot_forecast <- function(y, forecast_length, block_size, theta){
     estimated_coef[2]*sum
   # sigma^2*_n
   
-  eStar <- block_sampler(e, forecast_length, block_size)
+  eStar <- block_sampler(e, (forecast_length+1), block_size)
   
   yStar <- rep(0, (forecast_length+1))
   # Initialises a vector of bootstrap forecasted returns, 
   # the first entry is the last "observed" bootstrap return replicate: y*_n
-  yStar[1] <- y[length(y)] # y*_n = y_n
+  yStar[1] <- eStar[1]*sqrt(sigmaStar2[1])
+  
   
   for (k in 2:(forecast_length+1)){ 
     # Computes the bootstrapped returns and volatilities at n+1, ..., n+forecast_length
     sigmaStar2[k] <- estimated_coef[1] + 
       estimated_coef[2]*(yStar[k-1]^2) + 
-      estimated_coef[3]*(sigmaStar2[k-1])
-    yStar[k] <- eStar[k-1]*sqrt(sigmaStar2[k])
+      estimated_coef[3]*sigmaStar2[k-1]
+    yStar[k] <- eStar[k]*sqrt(sigmaStar2[k])
   }
   
-  return(c(yStar[2:(forecast_length+1)], sigmaStar2[2:(forecast_length+1)])) 
+  return(c(yStar[2:length(yStar)], sigmaStar2[2:length(sigmaStar2)])) 
   # We remove the first entry as it's the forecast at horizon 0 
   # (last observation)
 }
@@ -268,8 +269,8 @@ get_asymptotic_CI <- function(y, alpha, theta, forecast_length, sigma2){
   expect_sigma2T1 <- (w/(1-a-b)) + 
     ((a + b)^(forecast_length) * (w+a*y[n]^2+b*sigma2[n]))
   
-  lower <- qnorm(0.025)*expect_sigma2T1
-  upper <- -1*qnorm(0.025)*expect_sigma2T1
+  lower <- qnorm(alpha/2)*expect_sigma2T1
+  upper <- -1*qnorm(alpha/2)*expect_sigma2T1
   
   return(c(lower,upper))
   
@@ -467,7 +468,6 @@ monte_carlo <- function(n, nr.sim, forecast_length, block_size, B, alpha, R){
 }
 
 
-MC_500_20 <- monte_carlo(500, 25, 50, 10, 199, 0.05, 100)
-MC_500_10 <- MC_500_20
+monte_carlo(500, 25, 50, 10, 199, 0.05, 100)
 
-MC_500_1 <- monte_carlo(500, 3, 50, 1, 199, 0.05, 100)
+monte_carlo(500, 25, 50, 20, 199, 0.05, 100)
